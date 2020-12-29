@@ -7,12 +7,20 @@
 
 #include <game/gamecore.h>
 
+enum
+{
+	MAX_POSES = 1024
+};
+
 class CPoseCharacter : public CEntity
 {
 public:
 	CPoseCharacter(CGameWorld *pWorld);
 
 	static void ResetClientIDs();
+	static int FindIDFor(int SnappingClient);
+	static bool IsCurrent(int SnappingClient, int FakeID);
+	static void StepSnapID() { s_LastSnapID++; }
 
 	virtual void Reset() {}
 	virtual void Destroy() {}
@@ -27,7 +35,10 @@ public:
 	void WritePlayer(CPlayer *pPlayer);
 
 private:
-	static int s_FakeClientIDs[MAX_CLIENTS];
+	static short s_FakeClientIDs[MAX_CLIENTS][MAX_CLIENTS];
+	static short s_LastSnapID;
+
+	uint8_t m_ClientPoseMap[MAX_CLIENTS];
 
 	int m_Weapon;
 	int m_EmoteType;

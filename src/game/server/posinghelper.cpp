@@ -2,12 +2,36 @@
 
 #include "posinghelper.h"
 
-int CPoseCharacter::s_FakeClientIDs[MAX_CLIENTS];
+short CPoseCharacter::s_FakeClientIDs[MAX_CLIENTS][MAX_CLIENTS];
+short CPoseCharacter::s_LastSnapID = 0;
+
+int CPoseCharacter::FindIDFor(int SnappingClient)
+{
+	for(int i = 1; i < MAX_CLIENTS; ++i)
+	{
+		if(s_FakeClientIDs[SnappingClient][i] < s_LastSnapID - 1)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+bool CPoseCharacter::IsCurrent(int SnappingClient, int FakeID)
+{
+	if(FakeID == 0)
+		return false;
+	if(s_FakeClientIDs[SnappingClient][FakeID] == s_LastSnapID)
+		return true;
+
+	return false;
+}
 
 CPoseCharacter::CPoseCharacter(CGameWorld *pGameWorld) :
 	CEntity(pGameWorld, CGameWorld::ENTTYPE_POSE)
 {
 	GameWorld()->InsertEntity(this);
+	mem_zero(m_ClientPoseMap, sizeof(m_ClientPoseMap));
 }
 
 int CPoseCharacter::NetworkClipped(int SnappingClient)
@@ -33,10 +57,10 @@ int CPoseCharacter::NetworkClipped(int SnappingClient, vec2 CheckPos)
 
 void CPoseCharacter::WriteCharacter(CCharacter *pCharacter)
 {
-    pCharacter->Core()->Write(&m_Core);
-    m_Pos = pCharacter->m_Pos;
-    m_Weapon = pCharacter->Core()->m_ActiveWeapon;
-    m_EmoteType = pCharacter->GetEmoteType();
+	pCharacter->Core()->Write(&m_Core);
+	m_Pos = pCharacter->m_Pos;
+	m_Weapon = pCharacter->Core()->m_ActiveWeapon;
+	m_EmoteType = pCharacter->GetEmoteType();
 }
 
 void CPoseCharacter::WritePlayer(CPlayer *pPlayer)
@@ -59,20 +83,20 @@ void CPoseCharacter::SnapCharacter(int SnappingClient, int ID)
 		CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, ID, sizeof(CNetObj_Character)));
 		if(!pCharacter)
 			return;
-        
-        pCharacter->m_X = m_Core.m_X;
-        pCharacter->m_Y = m_Core.m_Y;
-        pCharacter->m_VelX = 0;
-        pCharacter->m_VelY = 0;
-        pCharacter->m_Angle = m_Core.m_Angle;
-        pCharacter->m_Direction = 0;
-        pCharacter->m_Jumped = 0;
-        pCharacter->m_HookState = m_Core.m_HookState;
-        pCharacter->m_HookTick = 0;
-        pCharacter->m_HookX = m_Core.m_HookX;
-        pCharacter->m_HookY = m_Core.m_HookY;
-        pCharacter->m_HookDx = m_Core.m_HookDx;
-        pCharacter->m_HookDy = m_Core.m_HookDy;
+
+		pCharacter->m_X = m_Core.m_X;
+		pCharacter->m_Y = m_Core.m_Y;
+		pCharacter->m_VelX = 0;
+		pCharacter->m_VelY = 0;
+		pCharacter->m_Angle = m_Core.m_Angle;
+		pCharacter->m_Direction = 0;
+		pCharacter->m_Jumped = 0;
+		pCharacter->m_HookState = m_Core.m_HookState;
+		pCharacter->m_HookTick = 0;
+		pCharacter->m_HookX = m_Core.m_HookX;
+		pCharacter->m_HookY = m_Core.m_HookY;
+		pCharacter->m_HookDx = m_Core.m_HookDx;
+		pCharacter->m_HookDy = m_Core.m_HookDy;
 
 		pCharacter->m_Tick = Server()->Tick();
 		pCharacter->m_Emote = m_EmoteType;
@@ -90,19 +114,19 @@ void CPoseCharacter::SnapCharacter(int SnappingClient, int ID)
 		if(!pCharacter)
 			return;
 
-        pCharacter->m_X = m_Core.m_X;
-        pCharacter->m_Y = m_Core.m_Y;
-        pCharacter->m_VelX = 0;
-        pCharacter->m_VelY = 0;
-        pCharacter->m_Angle = m_Core.m_Angle;
-        pCharacter->m_Direction = 0;
-        pCharacter->m_Jumped = m_Core.m_Jumped;
-        pCharacter->m_HookState = m_Core.m_HookState;
-        pCharacter->m_HookTick = m_Core.m_HookTick;
-        pCharacter->m_HookX = m_Core.m_HookX;
-        pCharacter->m_HookY = m_Core.m_HookY;
-        pCharacter->m_HookDx = m_Core.m_HookDx;
-        pCharacter->m_HookDy = m_Core.m_HookDy;
+		pCharacter->m_X = m_Core.m_X;
+		pCharacter->m_Y = m_Core.m_Y;
+		pCharacter->m_VelX = 0;
+		pCharacter->m_VelY = 0;
+		pCharacter->m_Angle = m_Core.m_Angle;
+		pCharacter->m_Direction = 0;
+		pCharacter->m_Jumped = m_Core.m_Jumped;
+		pCharacter->m_HookState = m_Core.m_HookState;
+		pCharacter->m_HookTick = m_Core.m_HookTick;
+		pCharacter->m_HookX = m_Core.m_HookX;
+		pCharacter->m_HookY = m_Core.m_HookY;
+		pCharacter->m_HookDx = m_Core.m_HookDx;
+		pCharacter->m_HookDy = m_Core.m_HookDy;
 
 		pCharacter->m_Tick = 0;
 		pCharacter->m_Emote = m_EmoteType;
@@ -124,13 +148,16 @@ void CPoseCharacter::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
-    IServer::CClientInfo Info;
+	IServer::CClientInfo Info;
 	Server()->GetClientInfo(SnappingClient, &Info);
 	bool IsOld = Info.m_DDNetVersion < VERSION_DDNET_OLD;
 
-    int ID = ++s_FakeClientIDs[SnappingClient];
-    if (IsOld && ID >= VANILLA_MAX_CLIENTS || ID >= MAX_CLIENTS)
-        return;
+	int ID = m_ClientPoseMap[SnappingClient];
+	if(!IsCurrent(SnappingClient, ID))
+		ID = FindIDFor(SnappingClient);
+
+	if(ID <= 0 || (IsOld && ID >= VANILLA_MAX_CLIENTS) || ID >= MAX_CLIENTS)
+		return;
 
 	SnapCharacter(SnappingClient, ID);
 
@@ -152,7 +179,10 @@ void CPoseCharacter::Snap(int SnappingClient)
 	pDDNetCharacter->m_TeleCheckpoint = 0;
 	pDDNetCharacter->m_StrongWeakID = 0;
 
-    SnapPlayer(SnappingClient, ID);
+	SnapPlayer(SnappingClient, ID);
+
+	s_FakeClientIDs[SnappingClient][ID] = s_LastSnapID + 1;
+	m_ClientPoseMap[SnappingClient] = ID;
 }
 
 void CPoseCharacter::SnapPlayer(int SnappingClient, int ID)
@@ -224,5 +254,5 @@ void CPoseCharacter::SnapPlayer(int SnappingClient, int ID)
 
 void CPoseCharacter::ResetClientIDs()
 {
-    mem_zero(s_FakeClientIDs, sizeof(s_FakeClientIDs));
+	mem_zero(s_FakeClientIDs, sizeof(s_FakeClientIDs));
 }

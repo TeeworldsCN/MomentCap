@@ -354,7 +354,7 @@ void CCharacter::FireWeapon()
 	}
 
 	DoWeaponSwitch();
-	vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
+	// vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
 
 	bool FullAuto = false;
 	// if(m_Core.m_ActiveWeapon == WEAPON_GRENADE || m_Core.m_ActiveWeapon == WEAPON_SHOTGUN || m_Core.m_ActiveWeapon == WEAPON_LASER)
@@ -380,7 +380,6 @@ void CCharacter::FireWeapon()
 
 	if(!WillFire)
 		return;
-
 
 	// HACK: fire weapon interupt
 	// TODO: proper iding
@@ -641,7 +640,6 @@ void CCharacter::FireWeapon()
 void CCharacter::HandleWeapons()
 {
 	// HACK: No weapon handling
-	
 
 	// //ninja
 	// HandleNinja();
@@ -1230,7 +1228,7 @@ void CCharacter::Snap(int SnappingClient)
 {
 	int ID = m_pPlayer->GetCID();
 
-	if (ID != SnappingClient)
+	if(ID != SnappingClient)
 		return;
 
 	if(SnappingClient > -1 && !Server()->Translate(ID, SnappingClient))
