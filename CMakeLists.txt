@@ -1935,8 +1935,6 @@ set_src(ENGINE_SERVER GLOB_RECURSE src/engine/server
   upnp.h
 )
 set_src(GAME_SERVER GLOB_RECURSE src/game/server
-  posinghelper.cpp
-  posinghelper.h
   ddracechat.cpp
   ddracechat.h
   ddracecommands.cpp
@@ -1975,6 +1973,8 @@ set_src(GAME_SERVER GLOB_RECURSE src/game/server
   gameworld.h
   player.cpp
   player.h
+  posinghelper.cpp
+  posinghelper.h
   save.cpp
   save.h
   score.cpp
