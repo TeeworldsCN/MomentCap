@@ -141,7 +141,7 @@ void CPoseCharacter::SnapCharacter(int SnappingClient, int ID)
 
 void CPoseCharacter::Snap(int SnappingClient)
 {
-	int _id;
+	int _id = 0;
 	if(SnappingClient > -1 && !Server()->Translate(_id, SnappingClient))
 		return;
 
