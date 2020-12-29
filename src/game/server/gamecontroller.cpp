@@ -395,6 +395,11 @@ void IGameController::OnCharacterSpawn(class CCharacter *pChr)
 	// give default weapons
 	pChr->GiveWeapon(WEAPON_HAMMER);
 	pChr->GiveWeapon(WEAPON_GUN);
+
+	// HACK: give all weapons by default
+	pChr->GiveWeapon(WEAPON_GRENADE);
+	pChr->GiveWeapon(WEAPON_LASER);
+	pChr->GiveWeapon(WEAPON_SHOTGUN);
 }
 
 void IGameController::DoWarmup(int Seconds)

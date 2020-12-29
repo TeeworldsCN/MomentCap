@@ -1935,6 +1935,8 @@ set_src(ENGINE_SERVER GLOB_RECURSE src/engine/server
   upnp.h
 )
 set_src(GAME_SERVER GLOB_RECURSE src/game/server
+  posinghelper.cpp
+  posinghelper.h
   ddracechat.cpp
   ddracechat.h
   ddracecommands.cpp

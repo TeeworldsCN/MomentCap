@@ -37,7 +37,7 @@ public:
 
 	// will be called after all Tick and PostTick calls from other players
 	void PostPostTick();
-	void Snap(int SnappingClient);
+	void Snap(int SnappingClient, int FakeID);
 	void FakeSnap();
 
 	void OnDirectInput(CNetObj_PlayerInput *NewInput);

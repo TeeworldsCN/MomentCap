@@ -365,6 +365,9 @@ bool CGameTeams::TeamFinished(int Team)
 
 int64 CGameTeams::TeamMask(int Team, int ExceptID, int Asker)
 {
+	// HACK: only send event to self
+	return 1LL << Asker;
+
 	int64 Mask = 0;
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)

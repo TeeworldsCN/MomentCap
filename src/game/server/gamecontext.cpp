@@ -26,6 +26,8 @@
 #include "gamemodes/DDRace.h"
 #include "score.h"
 
+#include <game/server/posinghelper.h>
+
 enum
 {
 	RESET,
@@ -217,6 +219,7 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 	CCharacter *apEnts[MAX_CLIENTS];
 	float Radius = 135.0f;
 	float InnerRadius = 48.0f;
+
 	int Num = m_World.FindEntities(Pos, Radius, (CEntity **)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 	int64 TeamMask = -1;
 	for(int i = 0; i < Num; i++)
@@ -383,8 +386,14 @@ void CGameContext::SendChat(int ChatterClientID, int Team, const char *pText, in
 
 	char aBuf[256], aText[256];
 	str_copy(aText, pText, sizeof(aText));
+	// HACK: send all chat via server msg
+
 	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
-		str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientID, Team, Server()->ClientName(ChatterClientID), aText);
+	{
+		str_format(aBuf, sizeof(aBuf), " - %s: %s", Server()->ClientName(ChatterClientID), aText);
+		str_copy(aText, aBuf, sizeof(aText));
+		ChatterClientID = -1;
+	}
 	else if(ChatterClientID == -2)
 	{
 		str_format(aBuf, sizeof(aBuf), "### %s", aText);
@@ -393,6 +402,7 @@ void CGameContext::SendChat(int ChatterClientID, int Team, const char *pText, in
 	}
 	else
 		str_format(aBuf, sizeof(aBuf), "*** %s", aText);
+
 	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, Team != CHAT_ALL ? "teamchat" : "chat", aBuf);
 
 	if(Team == CHAT_ALL)
@@ -456,10 +466,12 @@ void CGameContext::SendChat(int ChatterClientID, int Team, const char *pText, in
 
 void CGameContext::SendEmoticon(int ClientID, int Emoticon)
 {
-	CNetMsg_Sv_Emoticon Msg;
-	Msg.m_ClientID = ClientID;
-	Msg.m_Emoticon = Emoticon;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+	// HACK: no emoticon
+
+	// CNetMsg_Sv_Emoticon Msg;
+	// Msg.m_ClientID = ClientID;
+	// Msg.m_Emoticon = Emoticon;
+	// Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
 }
 
 void CGameContext::SendWeaponPickup(int ClientID, int Weapon)
@@ -3568,18 +3580,19 @@ void CGameContext::OnSnap(int ClientID)
 		Server()->SendMsg(&Msg, MSGFLAG_RECORD | MSGFLAG_NOSEND, ClientID);
 	}
 
+	CPoseCharacter::ResetClientIDs();
 	m_World.Snap(ClientID);
 	m_pController->Snap(ClientID);
 	m_Events.Snap(ClientID);
 
-	for(auto &pPlayer : m_apPlayers)
-	{
-		if(pPlayer)
-			pPlayer->Snap(ClientID);
-	}
+	// HACK: only send self as 0
+	if(m_apPlayers[ClientID])
+		m_apPlayers[ClientID]->Snap(ClientID, 0);
 
-	if(ClientID > -1)
-		m_apPlayers[ClientID]->FakeSnap();
+	// HACK: Don't need it anymore
+
+	// if(ClientID > -1)
+	// 	m_apPlayers[ClientID]->FakeSnap();
 }
 void CGameContext::OnPreSnap() {}
 void CGameContext::OnPostSnap()
@@ -3877,6 +3890,9 @@ void CGameContext::Whisper(int ClientID, char *pStr)
 
 void CGameContext::WhisperID(int ClientID, int VictimID, const char *pMessage)
 {
+	// HACK: no whisper
+	return;
+
 	if(!CheckClientID2(ClientID))
 		return;
 

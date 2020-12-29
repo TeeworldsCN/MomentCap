@@ -300,7 +300,7 @@ void CPlayer::PostPostTick()
 		TryRespawn();
 }
 
-void CPlayer::Snap(int SnappingClient)
+void CPlayer::Snap(int SnappingClient, int FakeID)
 {
 #ifdef CONF_DEBUG
 	if(!g_Config.m_DbgDummies || m_ClientID < MAX_CLIENTS - g_Config.m_DbgDummies)
@@ -312,7 +312,7 @@ void CPlayer::Snap(int SnappingClient)
 	if(SnappingClient > -1 && !Server()->Translate(id, SnappingClient))
 		return;
 
-	CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, id, sizeof(CNetObj_ClientInfo)));
+	CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, FakeID, sizeof(CNetObj_ClientInfo)));
 	if(!pClientInfo)
 		return;
 
@@ -331,17 +331,21 @@ void CPlayer::Snap(int SnappingClient)
 	// send 0 if times of others are not shown
 	if(SnappingClient != m_ClientID && g_Config.m_SvHideScore)
 		Score = -9999;
+	
+
+	// HACK: your score is always 0
+	Score = 0;
 
 	if(SnappingClient < 0 || !Server()->IsSixup(SnappingClient))
 	{
-		CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, id, sizeof(CNetObj_PlayerInfo)));
+		CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, FakeID, sizeof(CNetObj_PlayerInfo)));
 		if(!pPlayerInfo)
 			return;
 
 		pPlayerInfo->m_Latency = Latency;
 		pPlayerInfo->m_Score = Score;
-		pPlayerInfo->m_Local = (int)(m_ClientID == SnappingClient && (m_Paused != PAUSE_PAUSED || ClientVersion >= VERSION_DDNET_OLD));
-		pPlayerInfo->m_ClientID = id;
+		pPlayerInfo->m_Local = (m_Paused != PAUSE_PAUSED || ClientVersion >= VERSION_DDNET_OLD);
+		pPlayerInfo->m_ClientID = FakeID;
 		pPlayerInfo->m_Team = (ClientVersion < VERSION_DDNET_OLD || m_Paused != PAUSE_PAUSED || m_ClientID != SnappingClient) && m_Paused < PAUSE_SPEC ? m_Team : TEAM_SPECTATORS;
 
 		if(m_ClientID == SnappingClient && m_Paused == PAUSE_PAUSED && ClientVersion < VERSION_DDNET_OLD)
@@ -349,7 +353,7 @@ void CPlayer::Snap(int SnappingClient)
 	}
 	else
 	{
-		protocol7::CNetObj_PlayerInfo *pPlayerInfo = static_cast<protocol7::CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, id, sizeof(protocol7::CNetObj_PlayerInfo)));
+		protocol7::CNetObj_PlayerInfo *pPlayerInfo = static_cast<protocol7::CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, FakeID, sizeof(protocol7::CNetObj_PlayerInfo)));
 		if(!pPlayerInfo)
 			return;
 
@@ -366,7 +370,7 @@ void CPlayer::Snap(int SnappingClient)
 	{
 		if(SnappingClient < 0 || !Server()->IsSixup(SnappingClient))
 		{
-			CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, m_ClientID, sizeof(CNetObj_SpectatorInfo)));
+			CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, FakeID, sizeof(CNetObj_SpectatorInfo)));
 			if(!pSpectatorInfo)
 				return;
 
@@ -376,7 +380,7 @@ void CPlayer::Snap(int SnappingClient)
 		}
 		else
 		{
-			protocol7::CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<protocol7::CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, m_ClientID, sizeof(protocol7::CNetObj_SpectatorInfo)));
+			protocol7::CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<protocol7::CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, FakeID, sizeof(protocol7::CNetObj_SpectatorInfo)));
 			if(!pSpectatorInfo)
 				return;
 
@@ -387,7 +391,7 @@ void CPlayer::Snap(int SnappingClient)
 		}
 	}
 
-	CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, id, sizeof(CNetObj_DDNetPlayer)));
+	CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, FakeID, sizeof(CNetObj_DDNetPlayer)));
 	if(!pDDNetPlayer)
 		return;
 
@@ -403,7 +407,7 @@ void CPlayer::Snap(int SnappingClient)
 	if(SnappingClient >= 0 && Server()->IsSixup(SnappingClient) && m_pCharacter && m_pCharacter->m_DDRaceState == DDRACE_STARTED &&
 		GameServer()->m_apPlayers[SnappingClient]->m_TimerType == TIMERTYPE_SIXUP)
 	{
-		protocol7::CNetObj_PlayerInfoRace *pRaceInfo = static_cast<protocol7::CNetObj_PlayerInfoRace *>(Server()->SnapNewItem(-protocol7::NETOBJTYPE_PLAYERINFORACE, id, sizeof(protocol7::CNetObj_PlayerInfoRace)));
+		protocol7::CNetObj_PlayerInfoRace *pRaceInfo = static_cast<protocol7::CNetObj_PlayerInfoRace *>(Server()->SnapNewItem(-protocol7::NETOBJTYPE_PLAYERINFORACE, FakeID, sizeof(protocol7::CNetObj_PlayerInfoRace)));
 		pRaceInfo->m_RaceStartTick = m_pCharacter->m_StartTime;
 	}
 
@@ -417,7 +421,7 @@ void CPlayer::Snap(int SnappingClient)
 
 	if(ShowSpec)
 	{
-		CNetObj_SpecChar *pSpecChar = static_cast<CNetObj_SpecChar *>(Server()->SnapNewItem(NETOBJTYPE_SPECCHAR, id, sizeof(CNetObj_SpecChar)));
+		CNetObj_SpecChar *pSpecChar = static_cast<CNetObj_SpecChar *>(Server()->SnapNewItem(NETOBJTYPE_SPECCHAR, FakeID, sizeof(CNetObj_SpecChar)));
 		pSpecChar->m_X = m_pCharacter->Core()->m_Pos.x;
 		pSpecChar->m_Y = m_pCharacter->Core()->m_Pos.y;
 	}
