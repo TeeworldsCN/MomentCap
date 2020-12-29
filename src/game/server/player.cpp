@@ -331,7 +331,6 @@ void CPlayer::Snap(int SnappingClient, int FakeID)
 	// send 0 if times of others are not shown
 	if(SnappingClient != m_ClientID && g_Config.m_SvHideScore)
 		Score = -9999;
-	
 
 	// HACK: your score is always 0
 	Score = 0;

@@ -194,7 +194,7 @@ void CPoseCharacter::SnapPlayer(int SnappingClient, int ID)
 	*pClientInfo = m_ClientInfo;
 
 	int Latency = 999;
-	int Score = 60;
+	int Score = -60;
 
 	if(SnappingClient < 0 || !Server()->IsSixup(SnappingClient))
 	{
