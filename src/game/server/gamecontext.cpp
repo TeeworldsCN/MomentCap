@@ -3636,10 +3636,11 @@ void CGameContext::OnSnap(int ClientID)
 	m_Events.Snap(ClientID);
 
 	// HACK: only send self as 0
+	m_apPlayers[ClientID]->Snap(ClientID, 0);
+
 	if(ReadyForFakeSnap)
 	{
 		CPoseCharacter::SnapPoses(ClientID);
-		m_apPlayers[ClientID]->Snap(ClientID, 0);
 
 		// show others as entities
 		if(m_apPlayers[ClientID]->m_ShowOthers)
