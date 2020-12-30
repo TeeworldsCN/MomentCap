@@ -335,7 +335,7 @@ void CPoseCharacter::SnapCharacter(int SnappingClient, int ID)
 		pCharacter->m_HookDx = m_Core.m_HookDx;
 		pCharacter->m_HookDy = m_Core.m_HookDy;
 
-		pCharacter->m_Tick = Server()->Tick();
+		pCharacter->m_Tick = Server()->Tick() - 1;
 		pCharacter->m_Emote = m_EmoteType;
 		pCharacter->m_HookedPlayer = -1;
 		pCharacter->m_AttackTick = 0;
@@ -365,7 +365,7 @@ void CPoseCharacter::SnapCharacter(int SnappingClient, int ID)
 		pCharacter->m_HookDx = m_Core.m_HookDx;
 		pCharacter->m_HookDy = m_Core.m_HookDy;
 
-		pCharacter->m_Tick = Server()->Tick();
+		pCharacter->m_Tick = Server()->Tick() - 1;
 		pCharacter->m_Emote = m_EmoteType;
 		pCharacter->m_AttackTick = 0;
 		pCharacter->m_Weapon = m_Weapon;

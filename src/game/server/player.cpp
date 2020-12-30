@@ -43,6 +43,7 @@ void CPlayer::Pose()
 	}
 	else
 	{
+		int TimePassed = (Server()->Tick() - m_LastKill) / Server()->TickSpeed();
 		if(TimePassed < g_Config.m_SvCaptureInterval)
 		{
 			int TimeLeft = g_Config.m_SvCaptureInterval - TimePassed;
