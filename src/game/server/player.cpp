@@ -20,6 +20,16 @@ IServer *CPlayer::Server() const { return m_pGameServer->Server(); }
 
 void CPlayer::Pose()
 {
+	int JoinedTime = (Server()->Tick() - m_JoinTick) / Server()->TickSpeed();
+	if(JoinedTime < 10)
+	{
+		int TimeLeft = 10 - JoinedTime;
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "你需要等 %d 秒才能开始占位。", TimeLeft);
+		GameServer()->SendChatTarget(GetCID(), aBuf);
+		return;
+	}
+
 	int TimePassed = (Server()->Tick() - m_LastKill) / Server()->TickSpeed();
 	if(TimePassed < 1)
 		return;

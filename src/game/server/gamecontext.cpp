@@ -3076,6 +3076,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_Events.SetGameServer(this);
 
 	CPoseCharacter::Init(&m_World);
+	CPoseCharacter::LoadPoses();
 
 	m_GameUuid = RandomUuid();
 	Console()->SetTeeHistorianCommandCallback(CommandCallback, this);
@@ -3518,6 +3519,8 @@ void CGameContext::OnMapChange(char *pNewMapName, int MapNameSize)
 void CGameContext::OnShutdown()
 {
 	Antibot()->RoundEnd();
+
+	CPoseCharacter::SavePoses();
 
 	if(m_TeeHistorianActive)
 	{

@@ -184,6 +184,7 @@ MACRO_CONFIG_INT(SvPractice, sv_practice, 1, 0, 1, CFGFLAG_SERVER, "Enable pract
 
 MACRO_CONFIG_INT(SvShowClients, sv_show_clients, 1, 0, 1, CFGFLAG_SERVER, "Show clients as laser")
 MACRO_CONFIG_INT(SvCaptureInterval, sv_capture_interval, 5, 0, 60, CFGFLAG_SERVER, "Time to wait between captures")
+MACRO_CONFIG_INT(SvMaxCapturePerIP, sv_max_capture_per_ip, 2, 1, 60, CFGFLAG_SERVER, "Max capture per IP")
 
 MACRO_CONFIG_INT(ClVideoPauseWithDemo, cl_video_pausewithdemo, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Pause video rendering when demo playing pause")
 MACRO_CONFIG_INT(ClVideoShowhud, cl_video_showhud, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ingame HUD when rendering video")

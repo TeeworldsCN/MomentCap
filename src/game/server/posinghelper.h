@@ -18,9 +18,12 @@ public:
 	static class IServer *Server() { return GameWorld()->Server(); }
 	static void SnapPoses(int SnappingClient);
 
+	static bool CanModify(CPlayer *pPlayer);
 	static bool HasPose(CPlayer *pPlayer);
 	static void RemovePose(CPlayer *pPlayer);
 	static void Pose(CPlayer *pPlayer);
+	static void SavePoses();
+	static void LoadPoses();
 
 	static void Init(CGameWorld *pGameWorld);
 	static int FindIDFor(int SnappingClient);
@@ -42,14 +45,13 @@ private:
 	uint8_t m_ClientPoseMap[MAX_CLIENTS];
 
 	bool m_Init;
-	vec2 m_Pos;
 	int m_Weapon;
 	int m_EmoteType;
 	CNetObj_CharacterCore m_Core;
 	CNetObj_ClientInfo m_ClientInfo;
 
-	char aAddr[NETADDR_MAXSTRSIZE];
-	char aTimeoutCode[64];
+	char m_aAddr[NETADDR_MAXSTRSIZE];
+	char m_aTimeoutCode[64];
 
 	void SnapCharacter(int SnappingClient, int ID);
 	void SnapPlayer(int SnappingClient, int ID);
