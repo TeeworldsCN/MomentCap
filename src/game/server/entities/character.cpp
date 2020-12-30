@@ -1218,12 +1218,17 @@ void CCharacter::SnapCharacter(int SnappingClient, int ID)
 
 void CCharacter::Snap(int SnappingClient)
 {
+	// HACK: no auto snap;
+}
+
+void CCharacter::ManualSnap(int SnappingClient, int FakeID)
+{
 	int ID = m_pPlayer->GetCID();
 
-	if(ID != SnappingClient)
+	if(SnappingClient > -1 && !Server()->Translate(ID, SnappingClient))
 		return;
 
-	if(SnappingClient > -1 && !Server()->Translate(ID, SnappingClient))
+	if(FakeID < 0 || FakeID >= FAKE_MAX_CLIENTS)
 		return;
 
 	if(NetworkClipped(SnappingClient))
@@ -1248,9 +1253,9 @@ void CCharacter::Snap(int SnappingClient)
 	if(m_Paused)
 		return;
 
-	SnapCharacter(SnappingClient, 0);
+	SnapCharacter(SnappingClient, FakeID);
 
-	CNetObj_DDNetCharacter *pDDNetCharacter = static_cast<CNetObj_DDNetCharacter *>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, 0, sizeof(CNetObj_DDNetCharacter)));
+	CNetObj_DDNetCharacter *pDDNetCharacter = static_cast<CNetObj_DDNetCharacter *>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, FakeID, sizeof(CNetObj_DDNetCharacter)));
 	if(!pDDNetCharacter)
 		return;
 

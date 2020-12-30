@@ -54,6 +54,7 @@ public:
 	virtual int NetworkClipped(int SnappingClient);
 	virtual int NetworkClipped(int SnappingClient, vec2 CheckPos);
 
+	void ManualSnap(int SnappingClient, int FakeID);
 	bool IsGrounded();
 
 	void SetWeapon(int W);

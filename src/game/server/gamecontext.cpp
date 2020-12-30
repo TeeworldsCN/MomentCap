@@ -3637,16 +3637,56 @@ void CGameContext::OnSnap(int ClientID)
 
 	// HACK: only send self as 0
 	m_apPlayers[ClientID]->Snap(ClientID, 0);
+	if(m_apPlayers[ClientID]->GetCharacter())
+		m_apPlayers[ClientID]->GetCharacter()->ManualSnap(ClientID, 0);
+
+	bool SendReal = m_apPlayers[ClientID]->m_PlayerFlags & (PLAYERFLAG_CHATTING | PLAYERFLAG_SCOREBOARD);
 
 	if(ReadyForFakeSnap)
 	{
-		CPoseCharacter::SnapPoses(ClientID);
+		if(!SendReal)
+			CPoseCharacter::SnapPoses(ClientID);
 
-		// show others as entities
-		if(m_apPlayers[ClientID]->m_ShowOthers)
-			for(auto *pPlayer : m_apPlayers)
-				if(pPlayer)
-					pPlayer->SnapGhost(ClientID);
+		int Skip = (Server()->Tick() / 50) % MAX_CLIENTS;
+		int StartingPosition = -1;
+		int NumClient = 1;
+
+		for(int i = 0; i < MAX_CLIENTS * 5; ++i)
+		{
+			CPlayer *pPlayer = m_apPlayers[i % MAX_CLIENTS];
+			if(pPlayer)
+			{
+				if(Skip > 0)
+				{
+					Skip--;
+					continue;
+				}
+
+				if(i == StartingPosition)
+					break;
+
+				if(NumClient >= FAKE_MAX_CLIENTS)
+					break;
+
+				if(StartingPosition == -1)
+					StartingPosition = i;
+
+				if(SendReal)
+				{
+					if(ClientID != pPlayer->GetCID())
+					{
+						pPlayer->Snap(ClientID, NumClient);
+						NumClient++;
+					}
+				}
+				else
+				{
+					// show others as entities
+					if(m_apPlayers[ClientID]->m_ShowOthers)
+						pPlayer->SnapGhost(ClientID);
+				}
+			}
+		}
 	}
 
 	// HACK: Don't need it anymore
@@ -3656,7 +3696,8 @@ void CGameContext::OnSnap(int ClientID)
 }
 void CGameContext::OnPreSnap()
 {
-	CPoseCharacter::StepSnapID();
+	if()
+		CPoseCharacter::StepSnapID();
 }
 
 void CGameContext::OnPostSnap()

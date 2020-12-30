@@ -440,6 +440,10 @@ void CPlayer::SnapGhost(int SnappingClient)
 	pObj->m_Type = POWERUP_WEAPON;
 	pObj->m_Subtype = pChar->Core()->m_ActiveWeapon;
 
+	CNetObj_SpecChar *pSpecChar = static_cast<CNetObj_SpecChar *>(Server()->SnapNewItem(NETOBJTYPE_SPECCHAR, m_GhostSnapIDs[0], sizeof(CNetObj_SpecChar)));
+	pSpecChar->m_X = (int)pChar->m_Pos.x;
+	pSpecChar->m_Y = (int)pChar->m_Pos.y;
+
 	// pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_GhostSnapIDs[1], sizeof(CNetObj_Laser)));
 	// if(!pObj)
 	// 	return;
@@ -490,6 +494,9 @@ void CPlayer::Snap(int SnappingClient, int FakeID)
 	if(SnappingClient > -1 && !Server()->Translate(id, SnappingClient))
 		return;
 
+	if(FakeID < 0 || FakeID >= FAKE_MAX_CLIENTS)
+		return;
+
 	CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, FakeID, sizeof(CNetObj_ClientInfo)));
 	if(!pClientInfo)
 		return;
@@ -511,7 +518,10 @@ void CPlayer::Snap(int SnappingClient, int FakeID)
 		Score = -9999;
 
 	// HACK: your score is always 0
-	Score = 0;
+	if(FakeID == 0)
+		Score = 0;
+	else
+		Score = -FakeID;
 
 	if(SnappingClient < 0 || !Server()->IsSixup(SnappingClient))
 	{
@@ -521,7 +531,7 @@ void CPlayer::Snap(int SnappingClient, int FakeID)
 
 		pPlayerInfo->m_Latency = Latency;
 		pPlayerInfo->m_Score = Score;
-		pPlayerInfo->m_Local = (m_Paused != PAUSE_PAUSED || ClientVersion >= VERSION_DDNET_OLD);
+		pPlayerInfo->m_Local = (FakeID == 0) && (m_Paused != PAUSE_PAUSED || ClientVersion >= VERSION_DDNET_OLD);
 		pPlayerInfo->m_ClientID = FakeID;
 		pPlayerInfo->m_Team = (ClientVersion < VERSION_DDNET_OLD || m_Paused != PAUSE_PAUSED || m_ClientID != SnappingClient) && m_Paused < PAUSE_SPEC ? m_Team : TEAM_SPECTATORS;
 
@@ -598,20 +608,20 @@ void CPlayer::Snap(int SnappingClient, int FakeID)
 		pRaceInfo->m_RaceStartTick = m_pCharacter->m_StartTime;
 	}
 
-	bool ShowSpec = m_pCharacter && m_pCharacter->IsPaused();
+	// bool ShowSpec = m_pCharacter && m_pCharacter->IsPaused();
 
-	if(SnappingClient >= 0)
-	{
-		CPlayer *pSnapPlayer = GameServer()->m_apPlayers[SnappingClient];
-		ShowSpec = ShowSpec && (GameServer()->GetDDRaceTeam(id) == GameServer()->GetDDRaceTeam(SnappingClient) || pSnapPlayer->m_ShowOthers == 1 || (pSnapPlayer->GetTeam() == TEAM_SPECTATORS || pSnapPlayer->IsPaused()));
-	}
+	// if(SnappingClient >= 0)
+	// {
+	// 	CPlayer *pSnapPlayer = GameServer()->m_apPlayers[SnappingClient];
+	// 	ShowSpec = ShowSpec && (GameServer()->GetDDRaceTeam(id) == GameServer()->GetDDRaceTeam(SnappingClient) || pSnapPlayer->m_ShowOthers == 1 || (pSnapPlayer->GetTeam() == TEAM_SPECTATORS || pSnapPlayer->IsPaused()));
+	// }
 
-	if(ShowSpec)
-	{
-		CNetObj_SpecChar *pSpecChar = static_cast<CNetObj_SpecChar *>(Server()->SnapNewItem(NETOBJTYPE_SPECCHAR, FakeID, sizeof(CNetObj_SpecChar)));
-		pSpecChar->m_X = m_pCharacter->Core()->m_Pos.x;
-		pSpecChar->m_Y = m_pCharacter->Core()->m_Pos.y;
-	}
+	// if(ShowSpec)
+	// {
+	// 	CNetObj_SpecChar *pSpecChar = static_cast<CNetObj_SpecChar *>(Server()->SnapNewItem(NETOBJTYPE_SPECCHAR, FakeID, sizeof(CNetObj_SpecChar)));
+	// 	pSpecChar->m_X = m_pCharacter->Core()->m_Pos.x;
+	// 	pSpecChar->m_Y = m_pCharacter->Core()->m_Pos.y;
+	// }
 }
 
 void CPlayer::FakeSnap()
