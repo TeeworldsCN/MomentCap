@@ -517,7 +517,7 @@ void CPlayer::Snap(int SnappingClient, int FakeID)
 	if(FakeID == 0)
 		Score = 0;
 	else
-		Score = -FakeID;
+		Score = Server()->ClientAuthed(SnappingClient) ? -m_ClientID : -1;
 
 	if(SnappingClient < 0 || !Server()->IsSixup(SnappingClient))
 	{
