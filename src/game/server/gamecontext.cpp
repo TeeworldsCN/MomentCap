@@ -3629,14 +3629,16 @@ void CGameContext::OnSnap(int ClientID)
 		Server()->SendMsg(&Msg, MSGFLAG_RECORD | MSGFLAG_NOSEND, ClientID);
 	}
 
+	bool ReadyForFakeSnap = m_apPlayers[ClientID] && (Server()->Tick() - m_apPlayers[ClientID]->m_JoinTick) / Server()->TickSpeed() > 2;
+
 	m_World.Snap(ClientID);
-	CPoseCharacter::SnapPoses(ClientID);
 	m_pController->Snap(ClientID);
 	m_Events.Snap(ClientID);
 
 	// HACK: only send self as 0
-	if(m_apPlayers[ClientID])
+	if(ReadyForFakeSnap)
 	{
+		CPoseCharacter::SnapPoses(ClientID);
 		m_apPlayers[ClientID]->Snap(ClientID, 0);
 
 		// show others as entities
