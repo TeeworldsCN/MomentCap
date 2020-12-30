@@ -299,7 +299,7 @@ void CPlayer::Tick()
 			char aAddr[NETADDR_MAXSTRSIZE] = {0};
 			pPlayer = pChar->GetPlayer();
 			Server()->GetClientAddr(pPlayer->GetCID(), aAddr, NETADDR_MAXSTRSIZE);
-			Offset = str_format(aBuf, sizeof(aBuf), "--玩家--\n名称: %s\nIP: %s\n\n", Server()->ClientName(pPlayer->GetCID()), aAddr);
+			Offset = str_format(aBuf, sizeof(aBuf), "--玩家--\n名称(%d): %s\nIP: %s\n\n", pPlayer->GetCID(), Server()->ClientName(pPlayer->GetCID()), aAddr);
 		}
 
 		const CPoseCharacter *pPoseCharacter = CPoseCharacter::ClosestPose(m_ViewPos, 200.0f);
