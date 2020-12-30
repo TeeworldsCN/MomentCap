@@ -3016,6 +3016,17 @@ void CGameContext::ConLoadCaptures(IConsole::IResult *pResult, void *pUserData)
 	CPoseCharacter::LoadPoses();
 }
 
+void CGameContext::ConRemoveCapture(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!pSelf->Server()->ClientAuthed(pResult->m_ClientID))
+		return;
+	if(CPoseCharacter::RemovePoseByName(pResult->GetString(0)))
+		pSelf->SendChatTarget(pResult->m_ClientID, "删除成功");
+	else
+		pSelf->SendChatTarget(pResult->m_ClientID, "未找到记录");
+}
+
 void CGameContext::ConVote(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;

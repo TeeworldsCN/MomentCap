@@ -284,7 +284,41 @@ void CPlayer::Tick()
 	// HACK: broadcasting
 	int JoinedTime = (Server()->Tick() - m_JoinTick) / Server()->TickSpeed();
 
-	if((Server()->Tick() - m_LastBrTick) / Server()->TickSpeed() > 5)
+	if(Server()->ClientAuthed(m_ClientID) && (m_Paused || m_Team == TEAM_SPECTATORS))
+	{
+		// Auth Tool
+
+		char aBuf[256] = {0};
+		int Offset = 0;
+
+		CCharacter *pChar = GameServer()->m_World.ClosestCharacter(m_ViewPos, 200.0f, NULL);
+		CPlayer *pPlayer = NULL;
+		if(pChar)
+		{
+			char aAddr[NETADDR_MAXSTRSIZE] = {0};
+			pPlayer = pChar->GetPlayer();
+			Server()->GetClientAddr(pPlayer->GetCID(), aAddr, NETADDR_MAXSTRSIZE);
+			Offset = str_format(aBuf, sizeof(aBuf), "--玩家--\n名称: %s\nIP: %s\n\n", Server()->ClientName(pPlayer->GetCID()), aAddr);
+		}
+
+		const CPoseCharacter *pPoseCharacter = CPoseCharacter::ClosestPose(m_ViewPos, 200.0f);
+		if(pPoseCharacter)
+		{
+			char aName[MAX_NAME_LENGTH] = {0};
+			int aInts[4] = {0};
+			aInts[0] = pPoseCharacter->m_ClientInfo.m_Name0;
+			aInts[1] = pPoseCharacter->m_ClientInfo.m_Name1;
+			aInts[2] = pPoseCharacter->m_ClientInfo.m_Name2;
+			aInts[3] = pPoseCharacter->m_ClientInfo.m_Name3;
+			IntsToStr(aInts, 4, aName);
+
+			str_format(aBuf + Offset, sizeof(aBuf) - Offset - 1, "--记录--\n%s\nIP: %s\nTimeout: %s", aName, pPoseCharacter->m_aAddr, pPoseCharacter->m_aTimeoutCode);
+		}
+
+		if(aBuf[0] != 0)
+			GameServer()->SendBroadcast(aBuf, m_ClientID, false);
+	}
+	else if((Server()->Tick() - m_LastBrTick) / Server()->TickSpeed() > 5)
 	{
 		char aBuf[256];
 		bool HasPose = CPoseCharacter::HasPose(this);

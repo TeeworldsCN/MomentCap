@@ -58,4 +58,6 @@ CHAT_COMMAND("rescue", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConRescue, this, "Tele
 
 CHAT_COMMAND("kill", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConProtectedKill, this, "Kill yourself when kill-protected during a long game (use f1, kill for regular kill)")
 
+CHAT_COMMAND("rm_cap", "s[capture name]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConRemoveCapture, this, "Remove a capture by name")
+
 #undef CHAT_COMMAND

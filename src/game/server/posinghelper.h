@@ -21,9 +21,11 @@ public:
 	static bool CanModify(CPlayer *pPlayer);
 	static bool HasPose(CPlayer *pPlayer);
 	static bool RemovePose(CPlayer *pPlayer);
+	static bool RemovePoseByName(const char *pName);
 	static bool Pose(CPlayer *pPlayer);
 	static void SavePoses();
 	static void LoadPoses();
+	static const CPoseCharacter *ClosestPose(vec2 Pos, float Radius);
 	static int Count() { return s_PoseMap.size(); }
 
 	static void Init(CGameWorld *pGameWorld);
@@ -31,9 +33,14 @@ public:
 	static bool IsCurrent(int SnappingClient, int FakeID);
 	static void StepSnapID() { s_LastSnapID++; }
 
+	float Distance(vec2 Pos) const { return distance(Pos, vec2(m_Core.m_X, m_Core.m_Y)); }
 	void Snap(int SnappingClient);
 	int NetworkClipped(int SnappingClient);
 	int NetworkClipped(int SnappingClient, vec2 CheckPos);
+
+	CNetObj_ClientInfo m_ClientInfo;
+	char m_aAddr[NETADDR_MAXSTRSIZE];
+	char m_aTimeoutCode[64];
 
 private:
 	static CGameWorld *s_pGameWorld;
@@ -49,10 +56,6 @@ private:
 	int m_Weapon;
 	int m_EmoteType;
 	CNetObj_CharacterCore m_Core;
-	CNetObj_ClientInfo m_ClientInfo;
-
-	char m_aAddr[NETADDR_MAXSTRSIZE];
-	char m_aTimeoutCode[64];
 
 	void SnapCharacter(int SnappingClient, int ID);
 	void SnapPlayer(int SnappingClient, int ID);

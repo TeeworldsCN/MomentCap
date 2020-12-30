@@ -56,13 +56,26 @@ bool CPoseCharacter::RemovePose(CPlayer *pPlayer)
 		return false;
 
 	std::string Key(Server()->ClientName(pPlayer->GetCID()));
-	if(HasPose(pPlayer))
+	if(s_PoseMap.count(Key))
 	{
 		s_AddressCount[s_PoseMap[Key].m_aAddr]--;
 		s_PoseMap.erase(Key);
 	}
 
 	return true;
+}
+
+bool CPoseCharacter::RemovePoseByName(const char *pName)
+{
+	std::string Key(pName);
+	if(s_PoseMap.count(Key))
+	{
+		s_AddressCount[s_PoseMap[Key].m_aAddr]--;
+		s_PoseMap.erase(Key);
+		return true;
+	}
+
+	return false;
 }
 
 bool CPoseCharacter::Pose(CPlayer *pPlayer)
@@ -232,6 +245,23 @@ void CPoseCharacter::SavePoses()
 	}
 
 	io_close(File);
+}
+
+const CPoseCharacter *CPoseCharacter::ClosestPose(vec2 Pos, float Radius)
+{
+	const CPoseCharacter *pClosest = NULL;
+	float MinDist = INFINITY;
+	for(const auto &Pose : s_PoseMap)
+	{
+		float Dist = distance(vec2(Pose.second.m_Core.m_X, Pose.second.m_Core.m_Y), Pos);
+		if(Dist < Radius && Dist < MinDist)
+		{
+			MinDist = Dist;
+			pClosest = &(Pose.second);
+		}
+	}
+
+	return pClosest;
 }
 
 void CPoseCharacter::LoadPoses()

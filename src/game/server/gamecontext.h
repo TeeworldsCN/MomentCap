@@ -92,6 +92,8 @@ class CGameContext : public IGameServer
 
 	static void ConSaveCaptures(IConsole::IResult *pResult, void *pUserData);
 	static void ConLoadCaptures(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveCapture(IConsole::IResult *pResult, void *pUserData);
+
 	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConToggleTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneReset(IConsole::IResult *pResult, void *pUserData);
