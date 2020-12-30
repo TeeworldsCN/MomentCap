@@ -57,6 +57,9 @@ protected:
 
 	char m_aMapWish[MAX_MAP_LENGTH];
 
+	int m_ReloadCountDown;
+
+	int m_LastSaveTick;
 	int m_RoundStartTick;
 	int m_GameOverTick;
 	int m_SuddenDeath;

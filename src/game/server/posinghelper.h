@@ -20,8 +20,8 @@ public:
 
 	static bool CanModify(CPlayer *pPlayer);
 	static bool HasPose(CPlayer *pPlayer);
-	static void RemovePose(CPlayer *pPlayer);
-	static void Pose(CPlayer *pPlayer);
+	static bool RemovePose(CPlayer *pPlayer);
+	static bool Pose(CPlayer *pPlayer);
 	static void SavePoses();
 	static void LoadPoses();
 

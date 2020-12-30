@@ -51,7 +51,10 @@ public:
 
 	void SpectatePlayerName(const char *pName);
 
+	// HACK: Posing
 	void Pose();
+	int m_LastBrTick;
+	int m_LastPoseTick;
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player

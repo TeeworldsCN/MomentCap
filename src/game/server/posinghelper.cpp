@@ -53,10 +53,10 @@ bool CPoseCharacter::HasPose(CPlayer *pPlayer)
 	return false;
 }
 
-void CPoseCharacter::RemovePose(CPlayer *pPlayer)
+bool CPoseCharacter::RemovePose(CPlayer *pPlayer)
 {
 	if(!CanModify(pPlayer))
-		return;
+		return false;
 
 	std::string Key(Server()->ClientName(pPlayer->GetCID()));
 	if(HasPose(pPlayer))
@@ -64,12 +64,14 @@ void CPoseCharacter::RemovePose(CPlayer *pPlayer)
 		s_AddressCount[s_PoseMap[Key].m_aAddr]--;
 		s_PoseMap.erase(Key);
 	}
+
+	return true;
 }
 
-void CPoseCharacter::Pose(CPlayer *pPlayer)
+bool CPoseCharacter::Pose(CPlayer *pPlayer)
 {
 	if(!CanModify(pPlayer))
-		return;
+		return false;
 
 	char aAddr[NETADDR_MAXSTRSIZE];
 	Server()->GetClientAddr(pPlayer->GetCID(), aAddr, NETADDR_MAXSTRSIZE);
@@ -81,7 +83,21 @@ void CPoseCharacter::Pose(CPlayer *pPlayer)
 	if(!Exists && AddressCount >= g_Config.m_SvMaxCapturePerIP)
 	{
 		GameServer()->SendChatTarget(pPlayer->GetCID(), "抱歉，您占位数量太多啦。请取消一个占位再试。");
-		return;
+		return false;
+	}
+
+	// check distance WARNING: SLOWWWWWW
+	if(pPlayer->GetCharacter())
+	{
+		vec2 Pos = pPlayer->GetCharacter()->m_Pos;
+		for(auto &Pose : s_PoseMap)
+		{
+			if(Pose.first.compare(Key) != 0 && distance(vec2(Pose.second.m_Core.m_X, Pose.second.m_Core.m_Y), Pos) < 100.0f)
+			{
+				GameServer()->SendChatTarget(pPlayer->GetCID(), "站在这里名字会被挡住哦。要不换个地方吧。");
+				return false;
+			}
+		}
 	}
 
 	auto &Pose = s_PoseMap[Key];
@@ -101,6 +117,8 @@ void CPoseCharacter::Pose(CPlayer *pPlayer)
 	{
 		s_PoseMap.erase(Key);
 	}
+
+	return true;
 }
 
 int CPoseCharacter::FindIDFor(int SnappingClient)
@@ -184,18 +202,23 @@ void CPoseCharacter::SavePoses()
 	str_format(aBufTime, sizeof(aBufTime), "poses/%s.poses", aTimestamp);
 	str_format(aBufNew, sizeof(aBufNew), "poses/latest.poses");
 
-	dbg_msg("poses", "backing up poses \"%s\"", aBufTime);
+	char aBuf[255];
+	str_format(aBuf, sizeof(aBuf), "backing up poses \"%s\"", aBufTime);
+
 	GameServer()->Storage()->RenameFile(aBufNew, aBufTime, IStorage::TYPE_SAVE);
+	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "poses", aBuf);
 
 	size_t Size = s_PoseMap.size();
 	if(Size <= 0)
 		return;
 
-	dbg_msg("poses", "saving poses \"%s\"", aBufNew);
+	str_format(aBuf, sizeof(aBuf), "saving poses \"%s\"", aBufNew);
+	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "poses", aBuf);
 	IOHANDLE File = GameServer()->Storage()->OpenFile(aBufNew, IOFLAG_WRITE, IStorage::TYPE_SAVE);
 	if(!File)
 	{
-		dbg_msg("poses", "poses saving failed");
+		str_format(aBuf, sizeof(aBuf), "poses saving failed");
+		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "poses", aBuf);
 		return;
 	}
 
@@ -219,15 +242,18 @@ void CPoseCharacter::LoadPoses()
 	s_PoseMap.clear();
 	s_AddressCount.clear();
 
-	char aBuf[64];
-	str_format(aBuf, sizeof(aBuf), "poses/latest.poses");
+	char aFile[64];
+	str_format(aFile, sizeof(aFile), "poses/latest.poses");
 
-	dbg_msg("poses", "reading poses \"%s\"", aBuf);
+	char aBuf[255];
+	str_format(aBuf, sizeof(aBuf), "reading poses \"%s\"", aFile);
+	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "poses", aBuf);
 
-	IOHANDLE File = GameServer()->Storage()->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_SAVE);
+	IOHANDLE File = GameServer()->Storage()->OpenFile(aFile, IOFLAG_READ, IStorage::TYPE_SAVE);
 	if(!File)
 	{
-		dbg_msg("poses", "poses reading failed");
+		str_format(aBuf, sizeof(aBuf), "poses reading failed");
+		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "poses", aBuf);
 		return;
 	}
 

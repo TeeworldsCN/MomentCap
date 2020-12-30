@@ -246,6 +246,7 @@ public:
 	virtual char *GetMapName() = 0;
 
 	virtual bool IsSixup(int ClientID) const = 0;
+	virtual void Reload() = 0;
 };
 
 class IGameServer : public IInterface

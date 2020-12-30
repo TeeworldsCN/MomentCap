@@ -21,23 +21,25 @@ IServer *CPlayer::Server() const { return m_pGameServer->Server(); }
 void CPlayer::Pose()
 {
 	int JoinedTime = (Server()->Tick() - m_JoinTick) / Server()->TickSpeed();
-	if(JoinedTime < 10)
+	if(JoinedTime < g_Config.m_SvCaptureDelay)
 	{
-		int TimeLeft = 10 - JoinedTime;
+		int TimeLeft = g_Config.m_SvCaptureDelay - JoinedTime;
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "你需要等 %d 秒才能开始占位。", TimeLeft);
 		GameServer()->SendChatTarget(GetCID(), aBuf);
 		return;
 	}
 
-	int TimePassed = (Server()->Tick() - m_LastKill) / Server()->TickSpeed();
+	int TimePassed = (Server()->Tick() - m_LastPoseTick) / Server()->TickSpeed();
 	if(TimePassed < 1)
 		return;
 
 	if(CPoseCharacter::HasPose(this))
 	{
-		CPoseCharacter::RemovePose(this);
-		GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN, GetCID());
+		if(CPoseCharacter::RemovePose(this))
+			GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN, GetCID());
+		else
+			GameServer()->CreateSoundGlobal(SOUND_WEAPON_NOAMMO, GetCID());
 	}
 	else
 	{
@@ -49,10 +51,16 @@ void CPlayer::Pose()
 			GameServer()->SendChatTarget(GetCID(), aBuf);
 			return;
 		}
-		CPoseCharacter::Pose(this);
+		if(CPoseCharacter::Pose(this))
+			GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_EN, GetCID());
+		else
+			GameServer()->CreateSoundGlobal(SOUND_WEAPON_NOAMMO, GetCID());
+
 		m_LastKill = Server()->Tick();
-		GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_EN, GetCID());
 	}
+
+	m_LastPoseTick = Server()->Tick();
+	m_LastBrTick = 0;
 }
 
 CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
@@ -79,6 +87,8 @@ CPlayer::~CPlayer()
 
 void CPlayer::Reset()
 {
+	m_LastBrTick = 0;
+	m_LastPoseTick = 0;
 	m_DieTick = Server()->Tick();
 	m_PreviousDieTick = m_DieTick;
 	m_JoinTick = Server()->Tick();
@@ -271,6 +281,20 @@ void CPlayer::Tick()
 		Server()->ResetNetErrorString(m_ClientID);
 	}
 
+	// HACK: broadcasting
+	int JoinedTime = (Server()->Tick() - m_JoinTick) / Server()->TickSpeed();
+	if(JoinedTime > g_Config.m_SvCaptureDelay)
+	{
+		if((Server()->Tick() - m_LastBrTick) / Server()->TickSpeed() > 5)
+		{
+			if(CPoseCharacter::HasPose(this))
+				GameServer()->SendBroadcast("按 K/自杀键 取消占位", m_ClientID, false);
+			else
+				GameServer()->SendBroadcast("按 K/自杀键 拍照", m_ClientID, false);
+			m_LastBrTick = Server()->Tick();
+		}
+	}
+
 	if(!GameServer()->m_World.m_Paused)
 	{
 		int EarliestRespawnTick = m_PreviousDieTick + Server()->TickSpeed() * 3;
@@ -355,6 +379,8 @@ void CPlayer::SnapGhost(int SnappingClient)
 		return;
 
 	CCharacter *pChar = GetCharacter();
+	if(pChar->NetworkClipped(SnappingClient))
+		return;
 
 	CNetObj_Pickup *pObj = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, m_GhostSnapIDs[0], sizeof(CNetObj_Pickup)));
 	if(!pObj)

@@ -2994,6 +2994,16 @@ int CGameContext::MapScan(const char *pName, int IsDir, int DirType, void *pUser
 	return 0;
 }
 
+void CGameContext::ConSaveCaptures(IConsole::IResult *pResult, void *pUserData)
+{
+	CPoseCharacter::SavePoses();
+}
+
+void CGameContext::ConLoadCaptures(IConsole::IResult *pResult, void *pUserData)
+{
+	CPoseCharacter::LoadPoses();
+}
+
 void CGameContext::ConVote(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
@@ -3055,6 +3065,9 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("add_map_votes", "", CFGFLAG_SERVER, ConAddMapVotes, this, "Automatically adds voting options for all maps");
 	Console()->Register("vote", "r['yes'|'no']", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
 	Console()->Register("dump_antibot", "", CFGFLAG_SERVER, ConDumpAntibot, this, "Dumps the antibot status");
+
+	Console()->Register("save_captures", "", CFGFLAG_SERVER, ConSaveCaptures, this, "Force a save");
+	Console()->Register("load_captures", "", CFGFLAG_SERVER, ConLoadCaptures, this, "Force a load");
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 

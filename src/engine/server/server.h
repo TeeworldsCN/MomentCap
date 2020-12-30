@@ -458,6 +458,8 @@ public:
 
 	bool IsSixup(int ClientID) const { return m_aClients[ClientID].m_Sixup; }
 
+	virtual void Reload() { m_MapReload = true; }
+
 #ifdef CONF_FAMILY_UNIX
 	enum CONN_LOGGING_CMD
 	{
