@@ -3641,7 +3641,10 @@ void CGameContext::OnSnap(int ClientID)
 	if(m_apPlayers[ClientID]->GetCharacter())
 		m_apPlayers[ClientID]->GetCharacter()->ManualSnap(ClientID, 0);
 
-	bool SendReal = m_apPlayers[ClientID]->m_PlayerFlags & (PLAYERFLAG_CHATTING | PLAYERFLAG_SCOREBOARD);
+	bool SendReal = m_apPlayers[ClientID]->m_PlayerFlags &
+			(Server()->ClientAuthed(ClientID) ?
+					PLAYERFLAG_SCOREBOARD :
+					(PLAYERFLAG_CHATTING | PLAYERFLAG_SCOREBOARD));
 
 	if(SendReal == m_aLastSendReal[ClientID] && ReadyForFakeSnap)
 	{
