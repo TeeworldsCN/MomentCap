@@ -87,7 +87,7 @@ CPlayer::~CPlayer()
 
 void CPlayer::Reset()
 {
-	m_LastBrTick = 0;
+	m_LastBrTick = Server()->Tick() + 4;
 	m_LastPoseTick = 0;
 	m_DieTick = Server()->Tick();
 	m_PreviousDieTick = m_DieTick;
@@ -283,16 +283,15 @@ void CPlayer::Tick()
 
 	// HACK: broadcasting
 	int JoinedTime = (Server()->Tick() - m_JoinTick) / Server()->TickSpeed();
-	if(JoinedTime > g_Config.m_SvCaptureDelay)
+
+	if((Server()->Tick() - m_LastBrTick) / Server()->TickSpeed() > 5)
 	{
-		if((Server()->Tick() - m_LastBrTick) / Server()->TickSpeed() > 5)
-		{
-			if(CPoseCharacter::HasPose(this))
-				GameServer()->SendBroadcast("按 K/自杀键 取消占位", m_ClientID, false);
-			else
-				GameServer()->SendBroadcast("按 K/自杀键 拍照", m_ClientID, false);
-			m_LastBrTick = Server()->Tick();
-		}
+		char aBuf[256];
+		bool HasPose = CPoseCharacter::HasPose(this);
+		bool CanCapture = JoinedTime > g_Config.m_SvCaptureDelay;
+		str_format(aBuf, sizeof(aBuf), "%s\n在线玩家数: %d / %d\n共记下了 %d 个瞬间", CanCapture ? (HasPose ? "按 K/自杀键 取消占位" : "按 K/自杀键 拍照") : "元旦快乐！", GameServer()->m_NumPlayers, g_Config.m_SvMaxClients, GameServer()->m_NumCaptures);
+		GameServer()->SendBroadcast(aBuf, m_ClientID, false);
+		m_LastBrTick = Server()->Tick();
 	}
 
 	if(!GameServer()->m_World.m_Paused)

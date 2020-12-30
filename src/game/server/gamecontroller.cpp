@@ -397,11 +397,6 @@ void IGameController::OnCharacterSpawn(class CCharacter *pChr)
 	// give default weapons
 	pChr->GiveWeapon(WEAPON_HAMMER);
 	pChr->GiveWeapon(WEAPON_GUN);
-
-	// HACK: give all weapons by default
-	pChr->GiveWeapon(WEAPON_GRENADE);
-	pChr->GiveWeapon(WEAPON_LASER);
-	pChr->GiveWeapon(WEAPON_SHOTGUN);
 }
 
 void IGameController::DoWarmup(int Seconds)
@@ -426,7 +421,6 @@ void IGameController::Tick()
 {
 	// HACK: reload countdown
 	int ReloadTimeLeft = g_Config.m_SvSaveInterval - ((Server()->Tick() - m_LastSaveTick) / Server()->TickSpeed());
-
 	if(m_ReloadCountDown != ReloadTimeLeft)
 	{
 		m_ReloadCountDown = ReloadTimeLeft;
@@ -452,7 +446,7 @@ void IGameController::Tick()
 		// 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
 		// }
 
-		if(m_ReloadCountDown < 0)
+		if(g_Config.m_SvSaveInterval > 0 && m_ReloadCountDown < 0)
 		{
 			CPoseCharacter::SavePoses();
 			// char aMotd[900];

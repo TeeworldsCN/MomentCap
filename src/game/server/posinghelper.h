@@ -24,6 +24,7 @@ public:
 	static bool Pose(CPlayer *pPlayer);
 	static void SavePoses();
 	static void LoadPoses();
+	static int Count() { return s_PoseMap.size(); }
 
 	static void Init(CGameWorld *pGameWorld);
 	static int FindIDFor(int SnappingClient);

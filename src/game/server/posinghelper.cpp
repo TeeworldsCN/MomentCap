@@ -29,10 +29,7 @@ bool CPoseCharacter::CanModify(CPlayer *pPlayer)
 
 	if(Exists && str_comp(Pose.m_aTimeoutCode, pPlayer->m_TimeoutCode) != 0 && Pose.m_aTimeoutCode[0] != 0)
 	{
-		GameServer()->SendChatTarget(pPlayer->GetCID(), "----占位失败----");
-		GameServer()->SendChatTarget(pPlayer->GetCID(), "抱歉，您没有权限修改这个ID的占位，如果你确定需要删除或修改这个记录，请联系CHN服管理员。");
-		GameServer()->SendChatTarget(pPlayer->GetCID(), "联系QQ群：1044036098");
-		GameServer()->SendChatTarget(pPlayer->GetCID(), "或发送邮件给：2021@teeworlds.cn");
+		GameServer()->SendChatTarget(pPlayer->GetCID(), "抱歉，您没有权限修改这个ID的占位。请尝试重新加入服务器，如果这个提示一直出现，请联系CHN服管理员。联系QQ群：1044036098，或发送邮件给：2021@teeworlds.cn");
 		return false;
 	}
 

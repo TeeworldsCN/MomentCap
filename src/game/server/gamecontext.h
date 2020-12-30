@@ -288,7 +288,12 @@ public:
 
 	std::shared_ptr<CScoreRandomMapResult> m_SqlRandomMapResult;
 
+	int m_NumPlayers;
+	int m_NumCaptures;
+
 private:
+	int m_LastCountPlayersTick;
+
 	bool m_VoteWillPass;
 	class CScore *m_pScore;
 

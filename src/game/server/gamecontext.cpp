@@ -737,6 +737,18 @@ void CGameContext::SendTuningParams(int ClientID, int Zone)
 
 void CGameContext::OnTick()
 {
+	if(Server()->Tick() - m_LastCountPlayersTick > 2 * Server()->TickSpeed())
+	{
+		m_NumPlayers = 0;
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(m_apPlayers[i])
+				m_NumPlayers++;
+		}
+		m_NumCaptures = CPoseCharacter::Count();
+		m_LastCountPlayersTick = Server()->Tick();
+	}
+
 	// check tuning
 	CheckPureTuning();
 
