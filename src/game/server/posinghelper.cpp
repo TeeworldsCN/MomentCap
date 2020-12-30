@@ -2,8 +2,51 @@
 
 #include "posinghelper.h"
 
-short CPoseCharacter::s_FakeClientIDs[MAX_CLIENTS][MAX_CLIENTS];
+short CPoseCharacter::s_FakeClientIDs[MAX_CLIENTS][FAKE_MAX_CLIENTS];
 short CPoseCharacter::s_LastSnapID = 0;
+CGameWorld *CPoseCharacter::s_pGameWorld = NULL;
+std::unordered_map<std::string, CPoseCharacter> CPoseCharacter::s_PoseMap;
+
+void CPoseCharacter::SnapPoses(int SnappingClient)
+{
+	for(auto &Pose : s_PoseMap)
+	{
+		Pose.second.Snap(SnappingClient);
+	}
+}
+
+void CPoseCharacter::Init(CGameWorld *pGameWorld)
+{
+	s_pGameWorld = pGameWorld;
+	mem_zero(s_FakeClientIDs, sizeof(s_FakeClientIDs));
+}
+
+bool CPoseCharacter::HasPose(CPlayer *pPlayer)
+{
+	std::string Key(Server()->ClientName(pPlayer->GetCID()));
+	if(s_PoseMap.count(Key))
+		return true;
+	return false;
+}
+
+void CPoseCharacter::RemovePose(CPlayer *pPlayer)
+{
+	std::string Key(Server()->ClientName(pPlayer->GetCID()));
+	s_PoseMap.erase(Key);
+}
+
+void CPoseCharacter::Pose(CPlayer *pPlayer)
+{
+	std::string Key(Server()->ClientName(pPlayer->GetCID()));
+	auto &Char = s_PoseMap[Key];
+
+	if(pPlayer->GetCharacter())
+	{
+		Char.WriteCharacter(pPlayer->GetCharacter());
+		Char.WritePlayer(pPlayer);
+		Char.m_Init = true;
+	}
+}
 
 int CPoseCharacter::FindIDFor(int SnappingClient)
 {
@@ -27,10 +70,9 @@ bool CPoseCharacter::IsCurrent(int SnappingClient, int FakeID)
 	return false;
 }
 
-CPoseCharacter::CPoseCharacter(CGameWorld *pGameWorld) :
-	CEntity(pGameWorld, CGameWorld::ENTTYPE_POSE)
+CPoseCharacter::CPoseCharacter()
 {
-	GameWorld()->InsertEntity(this);
+	m_Init = false;
 	mem_zero(m_ClientPoseMap, sizeof(m_ClientPoseMap));
 }
 
@@ -72,6 +114,9 @@ void CPoseCharacter::WritePlayer(CPlayer *pPlayer)
 	m_ClientInfo.m_UseCustomColor = pPlayer->m_TeeInfos.m_UseCustomColor;
 	m_ClientInfo.m_ColorBody = pPlayer->m_TeeInfos.m_ColorBody;
 	m_ClientInfo.m_ColorFeet = pPlayer->m_TeeInfos.m_ColorFeet;
+
+	Server()->GetClientAddr(pPlayer->GetCID(), aAddr, NETADDR_MAXSTRSIZE);
+	str_copy(aTimeoutCode, pPlayer->m_TimeoutCode, 64);
 }
 
 void CPoseCharacter::SnapCharacter(int SnappingClient, int ID)
@@ -120,7 +165,7 @@ void CPoseCharacter::SnapCharacter(int SnappingClient, int ID)
 		pCharacter->m_VelY = 0;
 		pCharacter->m_Angle = m_Core.m_Angle;
 		pCharacter->m_Direction = 0;
-		pCharacter->m_Jumped = m_Core.m_Jumped;
+		pCharacter->m_Jumped = 0;
 		pCharacter->m_HookState = m_Core.m_HookState;
 		pCharacter->m_HookTick = m_Core.m_HookTick;
 		pCharacter->m_HookX = m_Core.m_HookX;
@@ -128,7 +173,7 @@ void CPoseCharacter::SnapCharacter(int SnappingClient, int ID)
 		pCharacter->m_HookDx = m_Core.m_HookDx;
 		pCharacter->m_HookDy = m_Core.m_HookDy;
 
-		pCharacter->m_Tick = 0;
+		pCharacter->m_Tick = Server()->Tick();
 		pCharacter->m_Emote = m_EmoteType;
 		pCharacter->m_AttackTick = 0;
 		pCharacter->m_Weapon = m_Weapon;
@@ -156,7 +201,8 @@ void CPoseCharacter::Snap(int SnappingClient)
 	if(!IsCurrent(SnappingClient, ID))
 		ID = FindIDFor(SnappingClient);
 
-	if(ID <= 0 || (IsOld && ID >= VANILLA_MAX_CLIENTS) || ID >= MAX_CLIENTS)
+	// leave one for spec
+	if(ID <= 0 || (IsOld && ID >= VANILLA_MAX_CLIENTS) || ID >= FAKE_MAX_CLIENTS)
 		return;
 
 	SnapCharacter(SnappingClient, ID);
@@ -168,6 +214,11 @@ void CPoseCharacter::Snap(int SnappingClient)
 	pDDNetCharacter->m_Flags = 0;
 	pDDNetCharacter->m_Flags |= CHARACTERFLAG_SOLO;
 	pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_COLLISION;
+	pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_HOOK;
+	pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_HAMMER_HIT;
+	pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_GRENADE_HIT;
+	pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_LASER_HIT;
+	pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_SHOTGUN_HIT;
 	pDDNetCharacter->m_Flags |= CHARACTERFLAG_WEAPON_HAMMER;
 	pDDNetCharacter->m_Flags |= CHARACTERFLAG_WEAPON_GUN;
 	pDDNetCharacter->m_Flags |= CHARACTERFLAG_WEAPON_SHOTGUN;
@@ -175,7 +226,7 @@ void CPoseCharacter::Snap(int SnappingClient)
 	pDDNetCharacter->m_Flags |= CHARACTERFLAG_WEAPON_LASER;
 
 	pDDNetCharacter->m_FreezeEnd = 0;
-	pDDNetCharacter->m_Jumps = m_Core.m_Jumped ? 1 : 0;
+	pDDNetCharacter->m_Jumps = 1;
 	pDDNetCharacter->m_TeleCheckpoint = 0;
 	pDDNetCharacter->m_StrongWeakID = 0;
 
@@ -250,9 +301,4 @@ void CPoseCharacter::SnapPlayer(int SnappingClient, int ID)
 
 	pDDNetPlayer->m_AuthLevel = 0;
 	pDDNetPlayer->m_Flags = 0;
-}
-
-void CPoseCharacter::ResetClientIDs()
-{
-	mem_zero(s_FakeClientIDs, sizeof(s_FakeClientIDs));
 }

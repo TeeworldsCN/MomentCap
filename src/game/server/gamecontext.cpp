@@ -2169,6 +2169,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			pMsg->m_SpectatorID = clamp(pMsg->m_SpectatorID, (int)SPEC_FOLLOW, MAX_CLIENTS - 1);
 
+			// HACK: no spectator mode
+			if(pMsg->m_SpectatorID >= 0)
+			{
+				SendChatTarget(ClientID, "抱歉，活动服务器不能旁观。");
+				return;
+			}
+
 			if(pMsg->m_SpectatorID >= 0)
 				if(!Server()->ReverseTranslate(pMsg->m_SpectatorID, ClientID))
 					return;
@@ -2346,17 +2353,18 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(!pChr)
 				return;
 
-			//Kill Protection
-			int CurrTime = (Server()->Tick() - pChr->m_StartTime) / Server()->TickSpeed();
-			if(g_Config.m_SvKillProtection != 0 && CurrTime >= (60 * g_Config.m_SvKillProtection) && pChr->m_DDRaceState == DDRACE_STARTED)
-			{
-				SendChatTarget(ClientID, "Kill Protection enabled. If you really want to kill, type /kill");
-				return;
-			}
+			// //Kill Protection
+			// int CurrTime = (Server()->Tick() - pChr->m_StartTime) / Server()->TickSpeed();
+			// if(g_Config.m_SvKillProtection != 0 && CurrTime >= (60 * g_Config.m_SvKillProtection) && pChr->m_DDRaceState == DDRACE_STARTED)
+			// {
+			// 	SendChatTarget(ClientID, "Kill Protection enabled. If you really want to kill, type /kill");
+			// 	return;
+			// }
 
-			pPlayer->m_LastKill = Server()->Tick();
-			pPlayer->KillCharacter(WEAPON_SELF);
-			pPlayer->Respawn();
+			// pPlayer->KillCharacter(WEAPON_SELF);
+			// pPlayer->Respawn();
+
+			pPlayer->Pose();
 		}
 	}
 	if(MsgID == NETMSGTYPE_CL_STARTINFO)
@@ -3058,7 +3066,6 @@ void CGameContext::OnConsoleInit()
 
 void CGameContext::OnInit(/*class IKernel *pKernel*/)
 {
-	CPoseCharacter::ResetClientIDs();
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 	m_pEngine = Kernel()->RequestInterface<IEngine>();
@@ -3067,6 +3074,8 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_pAntibot->RoundStart(this);
 	m_World.SetGameServer(this);
 	m_Events.SetGameServer(this);
+
+	CPoseCharacter::Init(&m_World);
 
 	m_GameUuid = RandomUuid();
 	Console()->SetTeeHistorianCommandCallback(CommandCallback, this);
@@ -3581,21 +3590,33 @@ void CGameContext::OnSnap(int ClientID)
 		Server()->SendMsg(&Msg, MSGFLAG_RECORD | MSGFLAG_NOSEND, ClientID);
 	}
 
-	CPoseCharacter::StepSnapID();
 	m_World.Snap(ClientID);
+	CPoseCharacter::SnapPoses(ClientID);
 	m_pController->Snap(ClientID);
 	m_Events.Snap(ClientID);
 
 	// HACK: only send self as 0
 	if(m_apPlayers[ClientID])
+	{
 		m_apPlayers[ClientID]->Snap(ClientID, 0);
+
+		// show others as entities
+		if(m_apPlayers[ClientID]->m_ShowOthers)
+			for(auto *pPlayer : m_apPlayers)
+				if(pPlayer)
+					pPlayer->SnapGhost(ClientID);
+	}
 
 	// HACK: Don't need it anymore
 
 	// if(ClientID > -1)
 	// 	m_apPlayers[ClientID]->FakeSnap();
 }
-void CGameContext::OnPreSnap() {}
+void CGameContext::OnPreSnap()
+{
+	CPoseCharacter::StepSnapID();
+}
+
 void CGameContext::OnPostSnap()
 {
 	m_Events.Clear();

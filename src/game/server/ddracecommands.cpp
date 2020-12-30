@@ -352,6 +352,7 @@ void CGameContext::ConKill(IConsole::IResult *pResult, void *pUserData)
 		return;
 
 	pPlayer->m_LastKill = pSelf->Server()->Tick();
+
 	pPlayer->KillCharacter(WEAPON_SELF);
 	//pPlayer->m_RespawnTick = pSelf->Server()->Tick() + pSelf->Server()->TickSpeed() * g_Config.m_SvSuicidePenalty;
 }

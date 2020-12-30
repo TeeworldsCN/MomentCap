@@ -37,6 +37,7 @@ public:
 
 	// will be called after all Tick and PostTick calls from other players
 	void PostPostTick();
+	void SnapGhost(int SnappingClient);
 	void Snap(int SnappingClient, int FakeID);
 	void FakeSnap();
 
@@ -49,6 +50,8 @@ public:
 	CCharacter *GetCharacter();
 
 	void SpectatePlayerName(const char *pName);
+
+	void Pose();
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
@@ -130,6 +133,8 @@ private:
 	int m_Paused;
 	int64 m_ForcePauseTime;
 	int64 m_LastPause;
+
+	int m_GhostSnapIDs[3];
 
 public:
 	enum

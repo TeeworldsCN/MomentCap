@@ -12,9 +12,38 @@
 #include <game/version.h>
 #include <time.h>
 
+#include <game/server/posinghelper.h>
+
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 
 IServer *CPlayer::Server() const { return m_pGameServer->Server(); }
+
+void CPlayer::Pose()
+{
+	int TimePassed = (Server()->Tick() - m_LastKill) / Server()->TickSpeed();
+	if(TimePassed < 1)
+		return;
+
+	if(CPoseCharacter::HasPose(this))
+	{
+		CPoseCharacter::RemovePose(this);
+		GameServer()->CreateSoundGlobal(SOUND_CTF_RETURN, GetCID());
+	}
+	else
+	{
+		if(TimePassed < g_Config.m_SvCaptureInterval)
+		{
+			int TimeLeft = g_Config.m_SvCaptureInterval - TimePassed;
+			char aBuf[128];
+			str_format(aBuf, sizeof(aBuf), "你需要等 %d 秒才能再次占位。", TimeLeft);
+			GameServer()->SendChatTarget(GetCID(), aBuf);
+			return;
+		}
+		CPoseCharacter::Pose(this);
+		m_LastKill = Server()->Tick();
+		GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_EN, GetCID());
+	}
+}
 
 CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 {
@@ -24,6 +53,8 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_NumInputs = 0;
 	Reset();
 	GameServer()->Antibot()->OnPlayerInit(m_ClientID);
+	for(auto &ID : m_GhostSnapIDs)
+		ID = Server()->SnapNewID();
 }
 
 CPlayer::~CPlayer()
@@ -32,6 +63,8 @@ CPlayer::~CPlayer()
 	delete m_pLastTarget;
 	delete m_pCharacter;
 	m_pCharacter = 0;
+	for(auto ID : m_GhostSnapIDs)
+		Server()->SnapFreeID(ID);
 }
 
 void CPlayer::Reset()
@@ -300,6 +333,66 @@ void CPlayer::PostPostTick()
 		TryRespawn();
 }
 
+void CPlayer::SnapGhost(int SnappingClient)
+{
+	if(!g_Config.m_SvShowClients)
+		return;
+
+	if(GetCID() == SnappingClient)
+		return;
+
+	if(!GetCharacter())
+		return;
+
+	CCharacter *pChar = GetCharacter();
+
+	CNetObj_Pickup *pObj = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, m_GhostSnapIDs[0], sizeof(CNetObj_Pickup)));
+	if(!pObj)
+		return;
+
+	pObj->m_X = (int)pChar->m_Pos.x;
+	pObj->m_Y = (int)pChar->m_Pos.y;
+	pObj->m_Type = POWERUP_WEAPON;
+	pObj->m_Subtype = pChar->Core()->m_ActiveWeapon;
+
+	// pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_GhostSnapIDs[1], sizeof(CNetObj_Laser)));
+	// if(!pObj)
+	// 	return;
+
+	// pObj->m_X = (int)pChar->m_Pos.x + 12;
+	// pObj->m_Y = (int)pChar->m_Pos.y + 12;
+	// pObj->m_FromX = pObj->m_X - 24;
+	// pObj->m_FromY = pObj->m_Y - 24;
+	// pObj->m_StartTick = Server()->Tick() - 4;
+
+	if(pChar->Core()->m_HookState != HOOK_RETRACTED)
+	{
+		CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_GhostSnapIDs[1], sizeof(CNetObj_Laser)));
+		if(!pObj)
+			return;
+
+		pObj->m_X = (int)pChar->m_Pos.x;
+		pObj->m_Y = (int)pChar->m_Pos.y;
+		pObj->m_FromX = (int)pChar->Core()->m_HookPos.x;
+		pObj->m_FromY = (int)pChar->Core()->m_HookPos.y;
+		pObj->m_StartTick = Server()->Tick() - 4;
+	}
+
+	if(m_PlayerFlags & PLAYERFLAG_CHATTING)
+	{
+		CNetObj_Projectile *pObj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_GhostSnapIDs[2], sizeof(CNetObj_Projectile)));
+		if(!pObj)
+			return;
+
+		pObj->m_X = (int)pChar->m_Pos.x + 18;
+		pObj->m_Y = (int)pChar->m_Pos.y - 24;
+		pObj->m_Type = WEAPON_GRENADE;
+		pObj->m_VelX = 0;
+		pObj->m_VelY = 0;
+		pObj->m_StartTick = Server()->Tick() - 4;
+	}
+}
+
 void CPlayer::Snap(int SnappingClient, int FakeID)
 {
 #ifdef CONF_DEBUG
@@ -373,9 +466,15 @@ void CPlayer::Snap(int SnappingClient, int FakeID)
 			if(!pSpectatorInfo)
 				return;
 
+			// HACK: force spec follow
 			pSpectatorInfo->m_SpectatorID = m_SpectatorID;
 			pSpectatorInfo->m_X = m_ViewPos.x;
 			pSpectatorInfo->m_Y = m_ViewPos.y;
+
+			if(m_SpectatorID != SPEC_FREEVIEW)
+			{
+				pSpectatorInfo->m_SpectatorID = 0;
+			}
 		}
 		else
 		{
@@ -385,6 +484,10 @@ void CPlayer::Snap(int SnappingClient, int FakeID)
 
 			pSpectatorInfo->m_SpecMode = m_SpectatorID == SPEC_FREEVIEW ? protocol7::SPEC_FREEVIEW : protocol7::SPEC_PLAYER;
 			pSpectatorInfo->m_SpectatorID = m_SpectatorID;
+			if(m_SpectatorID != SPEC_FREEVIEW)
+			{
+				pSpectatorInfo->m_SpectatorID = 0;
+			}
 			pSpectatorInfo->m_X = m_ViewPos.x;
 			pSpectatorInfo->m_Y = m_ViewPos.y;
 		}

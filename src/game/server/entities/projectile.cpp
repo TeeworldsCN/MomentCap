@@ -320,7 +320,7 @@ void CProjectile::Snap(int SnappingClient)
 	if(pProj)
 	{
 		if(SnappingClient > -1 && GameServer()->m_apPlayers[SnappingClient] && GameServer()->m_apPlayers[SnappingClient]->GetClientVersion() >= VERSION_DDNET_ANTIPING_PROJECTILE)
-			FillExtraInfo(pProj);
+			FillExtraInfo(pProj, SnappingClient);
 		else
 			FillInfo(pProj);
 	}
@@ -333,7 +333,7 @@ void CProjectile::SetBouncing(int Value)
 	m_Bouncing = Value;
 }
 
-void CProjectile::FillExtraInfo(CNetObj_Projectile *pProj)
+void CProjectile::FillExtraInfo(CNetObj_Projectile *pProj, int SnappingClient)
 {
 	const int MaxPos = 0x7fffffff / 100;
 	if(abs((int)m_Pos.y) + 1 >= MaxPos || abs((int)m_Pos.x) + 1 >= MaxPos)
@@ -345,8 +345,12 @@ void CProjectile::FillExtraInfo(CNetObj_Projectile *pProj)
 	//Send additional/modified info, by modifiying the fields of the netobj
 	float Angle = -atan2f(m_Direction.x, m_Direction.y);
 
+	int Owner = 0;
+	if(SnappingClient != m_Owner)
+		Owner = 255;
+
 	int Data = 0;
-	Data |= (abs(m_Owner) & 255) << 0;
+	Data |= (abs(Owner) & 255) << 0;
 	if(m_Owner < 0)
 		Data |= 1 << 8;
 	Data |= 1 << 9; //This bit tells the client to use the extra info

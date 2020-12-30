@@ -49,7 +49,7 @@ private:
 
 public:
 	void SetBouncing(int Value);
-	void FillExtraInfo(CNetObj_Projectile *pProj);
+	void FillExtraInfo(CNetObj_Projectile *pProj, int SnappingClient);
 };
 
 #endif

@@ -354,21 +354,21 @@ void CCharacter::FireWeapon()
 	}
 
 	DoWeaponSwitch();
-	// vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
+	vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
 
 	bool FullAuto = false;
-	// if(m_Core.m_ActiveWeapon == WEAPON_GRENADE || m_Core.m_ActiveWeapon == WEAPON_SHOTGUN || m_Core.m_ActiveWeapon == WEAPON_LASER)
-	// 	FullAuto = true;
-	// if(m_Jetpack && m_Core.m_ActiveWeapon == WEAPON_GUN)
-	// 	FullAuto = true;
+	if(m_Core.m_ActiveWeapon == WEAPON_GRENADE || m_Core.m_ActiveWeapon == WEAPON_SHOTGUN || m_Core.m_ActiveWeapon == WEAPON_LASER)
+		FullAuto = true;
+	if(m_Jetpack && m_Core.m_ActiveWeapon == WEAPON_GUN)
+		FullAuto = true;
 	// allow firing directly after coming out of freeze or being unfrozen
 	// by something
-	// if(m_FrozenLastTick)
-	// 	FullAuto = true;
+	if(m_FrozenLastTick)
+		FullAuto = true;
 
 	// don't fire hammer when player is deep and sv_deepfly is disabled
-	// if(!g_Config.m_SvDeepfly && m_Core.m_ActiveWeapon == WEAPON_HAMMER && m_DeepFreeze)
-	// 	return;
+	if(!g_Config.m_SvDeepfly && m_Core.m_ActiveWeapon == WEAPON_HAMMER && m_DeepFreeze)
+		return;
 
 	// check if we gonna fire
 	bool WillFire = false;
@@ -381,250 +381,242 @@ void CCharacter::FireWeapon()
 	if(!WillFire)
 		return;
 
-	// HACK: fire weapon interupt
-	// TODO: proper iding
-	CPoseCharacter *pNewPose = new CPoseCharacter(GameWorld());
-	pNewPose->WriteCharacter(this);
-	pNewPose->WritePlayer(GetPlayer());
-	GameServer()->CreateSound(m_Pos, SOUND_CTF_RETURN, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
-	return;
-
-	// if(m_FreezeTime)
-	// {
-	// 	// Timer stuff to avoid shrieking orchestra caused by unfreeze-plasma
-	// 	if(m_PainSoundTimer <= 0 && !(m_LatestPrevInput.m_Fire & 1))
-	// 	{
-	// 		m_PainSoundTimer = 1 * Server()->TickSpeed();
-	// 		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_LONG, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
-	// 	}
-	// 	return;
-	// }
+	if(m_FreezeTime)
+	{
+		// Timer stuff to avoid shrieking orchestra caused by unfreeze-plasma
+		if(m_PainSoundTimer <= 0 && !(m_LatestPrevInput.m_Fire & 1))
+		{
+			m_PainSoundTimer = 1 * Server()->TickSpeed();
+			GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_LONG, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
+		}
+		return;
+	}
 
 	// check for ammo
-	// if(!m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
-	// {
-	// 	/*// 125ms is a magical limit of how fast a human can click
-	// 	m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
-	// 	GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);*/
-	// 	return;
-	// }
+	if(!m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
+	{
+		/*// 125ms is a magical limit of how fast a human can click
+		m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
+		GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);*/
+		return;
+	}
 
-	// vec2 ProjStartPos = m_Pos + Direction * m_ProximityRadius * 0.75f;
+	vec2 ProjStartPos = m_Pos + Direction * m_ProximityRadius * 0.75f;
 
-	// switch(m_Core.m_ActiveWeapon)
-	// {
-	// case WEAPON_HAMMER:
-	// {
-	// 	// reset objects Hit
-	// 	m_NumObjectsHit = 0;
-	// 	GameServer()->CreateSound(m_Pos, SOUND_HAMMER_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
+	switch(m_Core.m_ActiveWeapon)
+	{
+	case WEAPON_HAMMER:
+	{
+		// reset objects Hit
+		m_NumObjectsHit = 0;
+		GameServer()->CreateSound(m_Pos, SOUND_HAMMER_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
 
-	// 	Antibot()->OnHammerFire(m_pPlayer->GetCID());
+		Antibot()->OnHammerFire(m_pPlayer->GetCID());
 
-	// 	if(m_Hit & DISABLE_HIT_HAMMER)
-	// 		break;
+		if(m_Hit & DISABLE_HIT_HAMMER)
+			break;
 
-	// 	CCharacter *apEnts[MAX_CLIENTS];
-	// 	int Hits = 0;
-	// 	int Num = GameServer()->m_World.FindEntities(ProjStartPos, m_ProximityRadius * 0.5f, (CEntity **)apEnts,
-	// 		MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+		CCharacter *apEnts[MAX_CLIENTS];
+		int Hits = 0;
+		int Num = GameServer()->m_World.FindEntities(ProjStartPos, m_ProximityRadius * 0.5f, (CEntity **)apEnts,
+			MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 
-	// 	for(int i = 0; i < Num; ++i)
-	// 	{
-	// 		CCharacter *pTarget = apEnts[i];
+		for(int i = 0; i < Num; ++i)
+		{
+			CCharacter *pTarget = apEnts[i];
 
-	// 		//if ((pTarget == this) || GameServer()->Collision()->IntersectLine(ProjStartPos, pTarget->m_Pos, NULL, NULL))
-	// 		if((pTarget == this || (pTarget->IsAlive() && !CanCollide(pTarget->GetPlayer()->GetCID()))))
-	// 			continue;
+			//if ((pTarget == this) || GameServer()->Collision()->IntersectLine(ProjStartPos, pTarget->m_Pos, NULL, NULL))
+			if((pTarget == this || (pTarget->IsAlive() && !CanCollide(pTarget->GetPlayer()->GetCID()))))
+				continue;
 
-	// 		// set his velocity to fast upward (for now)
-	// 		if(length(pTarget->m_Pos - ProjStartPos) > 0.0f)
-	// 			GameServer()->CreateHammerHit(pTarget->m_Pos - normalize(pTarget->m_Pos - ProjStartPos) * m_ProximityRadius * 0.5f, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
-	// 		else
-	// 			GameServer()->CreateHammerHit(ProjStartPos, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
+			// set his velocity to fast upward (for now)
+			if(length(pTarget->m_Pos - ProjStartPos) > 0.0f)
+				GameServer()->CreateHammerHit(pTarget->m_Pos - normalize(pTarget->m_Pos - ProjStartPos) * m_ProximityRadius * 0.5f, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
+			else
+				GameServer()->CreateHammerHit(ProjStartPos, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
 
-	// 		vec2 Dir;
-	// 		if(length(pTarget->m_Pos - m_Pos) > 0.0f)
-	// 			Dir = normalize(pTarget->m_Pos - m_Pos);
-	// 		else
-	// 			Dir = vec2(0.f, -1.f);
-	// 		/*pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
-	// 				m_pPlayer->GetCID(), m_Core.m_ActiveWeapon);*/
+			vec2 Dir;
+			if(length(pTarget->m_Pos - m_Pos) > 0.0f)
+				Dir = normalize(pTarget->m_Pos - m_Pos);
+			else
+				Dir = vec2(0.f, -1.f);
+			/*pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
+					m_pPlayer->GetCID(), m_Core.m_ActiveWeapon);*/
 
-	// 		float Strength;
-	// 		if(!m_TuneZone)
-	// 			Strength = GameServer()->Tuning()->m_HammerStrength;
-	// 		else
-	// 			Strength = GameServer()->TuningList()[m_TuneZone].m_HammerStrength;
+			float Strength;
+			if(!m_TuneZone)
+				Strength = GameServer()->Tuning()->m_HammerStrength;
+			else
+				Strength = GameServer()->TuningList()[m_TuneZone].m_HammerStrength;
 
-	// 		vec2 Temp = pTarget->m_Core.m_Vel + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f;
-	// 		Temp = ClampVel(pTarget->m_MoveRestrictions, Temp);
-	// 		Temp -= pTarget->m_Core.m_Vel;
-	// 		pTarget->TakeDamage((vec2(0.f, -1.0f) + Temp) * Strength, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
-	// 			m_pPlayer->GetCID(), m_Core.m_ActiveWeapon);
-	// 		pTarget->UnFreeze();
+			vec2 Temp = pTarget->m_Core.m_Vel + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f;
+			Temp = ClampVel(pTarget->m_MoveRestrictions, Temp);
+			Temp -= pTarget->m_Core.m_Vel;
+			pTarget->TakeDamage((vec2(0.f, -1.0f) + Temp) * Strength, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
+				m_pPlayer->GetCID(), m_Core.m_ActiveWeapon);
+			pTarget->UnFreeze();
 
-	// 		if(m_FreezeHammer)
-	// 			pTarget->Freeze();
+			if(m_FreezeHammer)
+				pTarget->Freeze();
 
-	// 		Antibot()->OnHammerHit(m_pPlayer->GetCID());
+			Antibot()->OnHammerHit(m_pPlayer->GetCID());
 
-	// 		Hits++;
-	// 	}
+			Hits++;
+		}
 
-	// 	// if we Hit anything, we have to wait for the reload
-	// 	if(Hits)
-	// 		m_ReloadTimer = Server()->TickSpeed() / 3;
-	// }
-	// break;
+		// if we Hit anything, we have to wait for the reload
+		if(Hits)
+			m_ReloadTimer = Server()->TickSpeed() / 3;
+	}
+	break;
 
-	// case WEAPON_GUN:
-	// {
-	// 	if(!m_Jetpack || !m_pPlayer->m_NinjaJetpack || m_Core.m_HasTelegunGun)
-	// 	{
-	// 		int Lifetime;
-	// 		if(!m_TuneZone)
-	// 			Lifetime = (int)(Server()->TickSpeed() * GameServer()->Tuning()->m_GunLifetime);
-	// 		else
-	// 			Lifetime = (int)(Server()->TickSpeed() * GameServer()->TuningList()[m_TuneZone].m_GunLifetime);
+	case WEAPON_GUN:
+	{
+		if(!m_Jetpack || !m_pPlayer->m_NinjaJetpack || m_Core.m_HasTelegunGun)
+		{
+			int Lifetime;
+			if(!m_TuneZone)
+				Lifetime = (int)(Server()->TickSpeed() * GameServer()->Tuning()->m_GunLifetime);
+			else
+				Lifetime = (int)(Server()->TickSpeed() * GameServer()->TuningList()[m_TuneZone].m_GunLifetime);
 
-	// 		CProjectile *pProj = new CProjectile(
-	// 			GameWorld(),
-	// 			WEAPON_GUN, //Type
-	// 			m_pPlayer->GetCID(), //Owner
-	// 			ProjStartPos, //Pos
-	// 			Direction, //Dir
-	// 			Lifetime, //Span
-	// 			0, //Freeze
-	// 			0, //Explosive
-	// 			0, //Force
-	// 			-1 //SoundImpact
-	// 		);
+			CProjectile *pProj = new CProjectile(
+				GameWorld(),
+				WEAPON_GUN, //Type
+				m_pPlayer->GetCID(), //Owner
+				ProjStartPos, //Pos
+				Direction, //Dir
+				Lifetime, //Span
+				0, //Freeze
+				0, //Explosive
+				0, //Force
+				-1 //SoundImpact
+			);
 
-	// 		// pack the Projectile and send it to the client Directly
-	// 		CNetObj_Projectile p;
-	// 		pProj->FillInfo(&p);
+			// pack the Projectile and send it to the client Directly
+			CNetObj_Projectile p;
+			pProj->FillInfo(&p);
 
-	// 		CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-	// 		Msg.AddInt(1);
-	// 		for(unsigned i = 0; i < sizeof(CNetObj_Projectile) / sizeof(int); i++)
-	// 			Msg.AddInt(((int *)&p)[i]);
+			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+			Msg.AddInt(1);
+			for(unsigned i = 0; i < sizeof(CNetObj_Projectile) / sizeof(int); i++)
+				Msg.AddInt(((int *)&p)[i]);
 
-	// 		Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_pPlayer->GetCID());
-	// 		GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
-	// 	}
-	// }
-	// break;
+			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_pPlayer->GetCID());
+			GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
+		}
+	}
+	break;
 
-	// case WEAPON_SHOTGUN:
-	// {
-	// 	/*int ShotSpread = 2;
+	case WEAPON_SHOTGUN:
+	{
+		/*int ShotSpread = 2;
 
-	// 		CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-	// 		Msg.AddInt(ShotSpread*2+1);
+			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+			Msg.AddInt(ShotSpread*2+1);
 
-	// 		for(int i = -ShotSpread; i <= ShotSpread; ++i)
-	// 		{
-	// 			float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
-	// 			float a = GetAngle(Direction);
-	// 			a += Spreading[i+2];
-	// 			float v = 1-(absolute(i)/(float)ShotSpread);
-	// 			float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
-	// 			CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
-	// 				m_pPlayer->GetCID(),
-	// 				ProjStartPos,
-	// 				vec2(cosf(a), sinf(a))*Speed,
-	// 				(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-	// 				1, 0, 0, -1);
+			for(int i = -ShotSpread; i <= ShotSpread; ++i)
+			{
+				float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+				float a = GetAngle(Direction);
+				a += Spreading[i+2];
+				float v = 1-(absolute(i)/(float)ShotSpread);
+				float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
+					m_pPlayer->GetCID(),
+					ProjStartPos,
+					vec2(cosf(a), sinf(a))*Speed,
+					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
+					1, 0, 0, -1);
 
-	// 			// pack the Projectile and send it to the client Directly
-	// 			CNetObj_Projectile p;
-	// 			pProj->FillInfo(&p);
+				// pack the Projectile and send it to the client Directly
+				CNetObj_Projectile p;
+				pProj->FillInfo(&p);
 
-	// 			for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
-	// 				Msg.AddInt(((int *)&p)[i]);
-	// 		}
+				for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+					Msg.AddInt(((int *)&p)[i]);
+			}
 
-	// 		Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_pPlayer->GetCID());
+			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_pPlayer->GetCID());
 
-	// 		GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);*/
-	// 	float LaserReach;
-	// 	if(!m_TuneZone)
-	// 		LaserReach = GameServer()->Tuning()->m_LaserReach;
-	// 	else
-	// 		LaserReach = GameServer()->TuningList()[m_TuneZone].m_LaserReach;
+			GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);*/
+		float LaserReach;
+		if(!m_TuneZone)
+			LaserReach = GameServer()->Tuning()->m_LaserReach;
+		else
+			LaserReach = GameServer()->TuningList()[m_TuneZone].m_LaserReach;
 
-	// 	new CLaser(&GameServer()->m_World, m_Pos, Direction, LaserReach, m_pPlayer->GetCID(), WEAPON_SHOTGUN);
-	// 	GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
-	// }
-	// break;
+		new CLaser(&GameServer()->m_World, m_Pos, Direction, LaserReach, m_pPlayer->GetCID(), WEAPON_SHOTGUN);
+		GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
+	}
+	break;
 
-	// case WEAPON_GRENADE:
-	// {
-	// 	int Lifetime;
-	// 	if(!m_TuneZone)
-	// 		Lifetime = (int)(Server()->TickSpeed() * GameServer()->Tuning()->m_GrenadeLifetime);
-	// 	else
-	// 		Lifetime = (int)(Server()->TickSpeed() * GameServer()->TuningList()[m_TuneZone].m_GrenadeLifetime);
+	case WEAPON_GRENADE:
+	{
+		int Lifetime;
+		if(!m_TuneZone)
+			Lifetime = (int)(Server()->TickSpeed() * GameServer()->Tuning()->m_GrenadeLifetime);
+		else
+			Lifetime = (int)(Server()->TickSpeed() * GameServer()->TuningList()[m_TuneZone].m_GrenadeLifetime);
 
-	// 	CProjectile *pProj = new CProjectile(
-	// 		GameWorld(),
-	// 		WEAPON_GRENADE, //Type
-	// 		m_pPlayer->GetCID(), //Owner
-	// 		ProjStartPos, //Pos
-	// 		Direction, //Dir
-	// 		Lifetime, //Span
-	// 		0, //Freeze
-	// 		true, //Explosive
-	// 		0, //Force
-	// 		SOUND_GRENADE_EXPLODE //SoundImpact
-	// 	); //SoundImpact
+		CProjectile *pProj = new CProjectile(
+			GameWorld(),
+			WEAPON_GRENADE, //Type
+			m_pPlayer->GetCID(), //Owner
+			ProjStartPos, //Pos
+			Direction, //Dir
+			Lifetime, //Span
+			0, //Freeze
+			true, //Explosive
+			0, //Force
+			SOUND_GRENADE_EXPLODE //SoundImpact
+		); //SoundImpact
 
-	// 	// pack the Projectile and send it to the client Directly
-	// 	CNetObj_Projectile p;
-	// 	pProj->FillInfo(&p);
+		// pack the Projectile and send it to the client Directly
+		CNetObj_Projectile p;
+		pProj->FillInfo(&p);
 
-	// 	CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-	// 	Msg.AddInt(1);
-	// 	for(unsigned i = 0; i < sizeof(CNetObj_Projectile) / sizeof(int); i++)
-	// 		Msg.AddInt(((int *)&p)[i]);
-	// 	Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_pPlayer->GetCID());
+		CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+		Msg.AddInt(1);
+		for(unsigned i = 0; i < sizeof(CNetObj_Projectile) / sizeof(int); i++)
+			Msg.AddInt(((int *)&p)[i]);
+		Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_pPlayer->GetCID());
 
-	// 	GameServer()->CreateSound(m_Pos, SOUND_GRENADE_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
-	// }
-	// break;
+		GameServer()->CreateSound(m_Pos, SOUND_GRENADE_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
+	}
+	break;
 
-	// case WEAPON_LASER:
-	// {
-	// 	float LaserReach;
-	// 	if(!m_TuneZone)
-	// 		LaserReach = GameServer()->Tuning()->m_LaserReach;
-	// 	else
-	// 		LaserReach = GameServer()->TuningList()[m_TuneZone].m_LaserReach;
+	case WEAPON_LASER:
+	{
+		float LaserReach;
+		if(!m_TuneZone)
+			LaserReach = GameServer()->Tuning()->m_LaserReach;
+		else
+			LaserReach = GameServer()->TuningList()[m_TuneZone].m_LaserReach;
 
-	// 	new CLaser(GameWorld(), m_Pos, Direction, LaserReach, m_pPlayer->GetCID(), WEAPON_LASER);
-	// 	GameServer()->CreateSound(m_Pos, SOUND_LASER_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
-	// }
-	// break;
+		new CLaser(GameWorld(), m_Pos, Direction, LaserReach, m_pPlayer->GetCID(), WEAPON_LASER);
+		GameServer()->CreateSound(m_Pos, SOUND_LASER_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
+	}
+	break;
 
-	// case WEAPON_NINJA:
-	// {
-	// 	// reset Hit objects
-	// 	m_NumObjectsHit = 0;
+	case WEAPON_NINJA:
+	{
+		// reset Hit objects
+		m_NumObjectsHit = 0;
 
-	// 	m_Ninja.m_ActivationDir = Direction;
-	// 	m_Ninja.m_CurrentMoveTime = g_pData->m_Weapons.m_Ninja.m_Movetime * Server()->TickSpeed() / 1000;
-	// 	m_Ninja.m_OldVelAmount = length(m_Core.m_Vel);
+		m_Ninja.m_ActivationDir = Direction;
+		m_Ninja.m_CurrentMoveTime = g_pData->m_Weapons.m_Ninja.m_Movetime * Server()->TickSpeed() / 1000;
+		m_Ninja.m_OldVelAmount = length(m_Core.m_Vel);
 
-	// 	GameServer()->CreateSound(m_Pos, SOUND_NINJA_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
-	// }
-	// break;
-	// }
+		GameServer()->CreateSound(m_Pos, SOUND_NINJA_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
+	}
+	break;
+	}
 
-	// m_AttackTick = Server()->Tick();
+	m_AttackTick = Server()->Tick();
 
-	// /*if(m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo > 0) // -1 == unlimited
-	// 	m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo--;*/
+	/*if(m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo > 0) // -1 == unlimited
+		m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo--;*/
 
 	if(!m_ReloadTimer)
 	{
@@ -1237,11 +1229,11 @@ void CCharacter::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
+	// HACK: no demo?
 	if(SnappingClient > -1)
 	{
 		CCharacter *pSnapChar = GameServer()->GetPlayerChar(SnappingClient);
 		CPlayer *pSnapPlayer = GameServer()->m_apPlayers[SnappingClient];
-
 		if(pSnapPlayer->GetTeam() == TEAM_SPECTATORS || pSnapPlayer->IsPaused())
 		{
 			if(pSnapPlayer->m_SpectatorID != -1 && !CanCollide(pSnapPlayer->m_SpectatorID) && (pSnapPlayer->m_ShowOthers == 0 || (pSnapPlayer->m_ShowOthers == 2 && !SameTeam(pSnapPlayer->m_SpectatorID))))

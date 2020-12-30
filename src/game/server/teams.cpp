@@ -276,6 +276,14 @@ void CGameTeams::SetForceCharacterTeam(int ClientID, int Team)
 	int OldTeam = m_Core.Team(ClientID);
 
 	m_Core.Team(ClientID, Team);
+	if(Team == 0)
+	{
+		m_Core.SetSolo(ClientID, true);
+	}
+	else
+	{
+		m_Core.SetSolo(ClientID, false);
+	}
 
 	if(OldTeam != Team)
 	{
@@ -366,7 +374,10 @@ bool CGameTeams::TeamFinished(int Team)
 int64 CGameTeams::TeamMask(int Team, int ExceptID, int Asker)
 {
 	// HACK: only send event to self
-	return 1LL << Asker;
+	// if(ExceptID == Asker)
+	// 	return 0;
+
+	// return 1LL << Asker;
 
 	int64 Mask = 0;
 
@@ -445,8 +456,9 @@ void CGameTeams::SendTeamsState(int ClientID)
 
 	CMsgPacker Msg(NETMSGTYPE_SV_TEAMSSTATE);
 
-	for(unsigned i = 0; i < MAX_CLIENTS; i++)
-		Msg.AddInt(m_Core.Team(i));
+	// leave one for spec
+	for(unsigned i = 0; i < FAKE_MAX_CLIENTS; i++)
+		Msg.AddInt(m_Core.Team(ClientID));
 
 	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
