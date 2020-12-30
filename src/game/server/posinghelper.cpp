@@ -234,7 +234,7 @@ void CPoseCharacter::SavePoses()
 
 	io_write(File, &Size, sizeof(size_t));
 
-	for(const auto Pose : s_PoseMap)
+	for(const auto &Pose : s_PoseMap)
 	{
 		io_write(File, &Pose.second.m_ClientInfo, sizeof(m_ClientInfo));
 		io_write(File, &Pose.second.m_Core, sizeof(m_Core));
