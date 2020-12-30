@@ -3113,6 +3113,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 
 	CPoseCharacter::Init(&m_World);
 	CPoseCharacter::LoadPoses();
+	mem_zero(m_aLastSendReal, sizeof(m_aLastSendReal));
 
 	m_GameUuid = RandomUuid();
 	Console()->SetTeeHistorianCommandCallback(CommandCallback, this);
@@ -3642,41 +3643,23 @@ void CGameContext::OnSnap(int ClientID)
 
 	bool SendReal = m_apPlayers[ClientID]->m_PlayerFlags & (PLAYERFLAG_CHATTING | PLAYERFLAG_SCOREBOARD);
 
-	if(ReadyForFakeSnap)
+	if(SendReal == m_aLastSendReal[ClientID] && ReadyForFakeSnap)
 	{
-		if(!SendReal)
-			CPoseCharacter::SnapPoses(ClientID);
+		CPoseCharacter::SnapPoses(ClientID, SendReal);
 
-		int Skip = (Server()->Tick() / 50) % MAX_CLIENTS;
-		int StartingPosition = -1;
-		int NumClient = 1;
-
-		for(int i = 0; i < MAX_CLIENTS * 5; ++i)
+		for(auto *pPlayer : m_apPlayers)
 		{
-			CPlayer *pPlayer = m_apPlayers[i % MAX_CLIENTS];
 			if(pPlayer)
 			{
-				if(Skip > 0)
-				{
-					Skip--;
-					continue;
-				}
-
-				if(i == StartingPosition)
-					break;
-
-				if(NumClient >= FAKE_MAX_CLIENTS)
-					break;
-
-				if(StartingPosition == -1)
-					StartingPosition = i;
-
 				if(SendReal)
 				{
+					int PID = pPlayer->GetCID();
 					if(ClientID != pPlayer->GetCID())
 					{
-						pPlayer->Snap(ClientID, NumClient);
-						NumClient++;
+						pPlayer->Snap(ClientID, PID == 0 ? ClientID : PID);
+						auto pChar = pPlayer->GetCharacter();
+						if(pChar)
+							pChar->ManualSnap(ClientID, PID == 0 ? ClientID : PID);
 					}
 				}
 				else
@@ -3689,6 +3672,8 @@ void CGameContext::OnSnap(int ClientID)
 		}
 	}
 
+	m_aLastSendReal[ClientID] = SendReal;
+
 	// HACK: Don't need it anymore
 
 	// if(ClientID > -1)
@@ -3696,8 +3681,7 @@ void CGameContext::OnSnap(int ClientID)
 }
 void CGameContext::OnPreSnap()
 {
-	if()
-		CPoseCharacter::StepSnapID();
+	CPoseCharacter::StepSnapID();
 }
 
 void CGameContext::OnPostSnap()

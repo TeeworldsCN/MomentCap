@@ -151,6 +151,7 @@ public:
 
 	CEventHandler m_Events;
 	CPlayer *m_apPlayers[MAX_CLIENTS];
+	bool m_aLastSendReal[MAX_CLIENTS];
 
 	IGameController *m_pController;
 	CGameWorld m_World;

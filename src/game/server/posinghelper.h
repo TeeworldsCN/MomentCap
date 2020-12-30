@@ -12,11 +12,12 @@ class CPoseCharacter
 {
 public:
 	CPoseCharacter();
+	~CPoseCharacter();
 
 	static class CGameWorld *GameWorld() { return s_pGameWorld; }
 	static class CGameContext *GameServer() { return GameWorld()->GameServer(); }
 	static class IServer *Server() { return GameWorld()->Server(); }
-	static void SnapPoses(int SnappingClient);
+	static void SnapPoses(int SnappingClient, bool AsSpec);
 
 	static bool CanModify(CPlayer *pPlayer);
 	static bool HasPose(CPlayer *pPlayer);
@@ -34,7 +35,7 @@ public:
 	static void StepSnapID() { s_LastSnapID++; }
 
 	float Distance(vec2 Pos) const { return distance(Pos, vec2(m_Core.m_X, m_Core.m_Y)); }
-	void Snap(int SnappingClient);
+	void Snap(int SnappingClient, bool AsSpec, int SpecID);
 	int NetworkClipped(int SnappingClient);
 	int NetworkClipped(int SnappingClient, vec2 CheckPos);
 
@@ -49,6 +50,8 @@ private:
 	static short s_LastSnapID;
 	static std::unordered_map<std::string, CPoseCharacter> s_PoseMap;
 	static std::unordered_map<std::string, int> s_AddressCount;
+
+	int m_EntityID;
 
 	uint8_t m_ClientPoseMap[MAX_CLIENTS];
 
