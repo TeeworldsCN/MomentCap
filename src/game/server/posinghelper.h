@@ -8,6 +8,17 @@
 #include <game/gamecore.h>
 #include <unordered_map>
 
+struct SPoseSnapCache
+{
+	bool m_Exists;
+	CNetObj_Character m_Char;
+	CNetObj_DDNetCharacter m_DDNetChar;
+	CNetObj_Laser m_Laser;
+	CNetObj_ClientInfo m_ClientInfo;
+	CNetObj_PlayerInfo m_PlayerInfo;
+	CNetObj_DDNetPlayer m_DDNetPlayer;
+};
+
 class CPoseCharacter
 {
 public:
@@ -17,7 +28,7 @@ public:
 	static class CGameWorld *GameWorld() { return s_pGameWorld; }
 	static class CGameContext *GameServer() { return GameWorld()->GameServer(); }
 	static class IServer *Server() { return GameWorld()->Server(); }
-	static void SnapPoses(int SnappingClient, bool AsSpec);
+	static void SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap);
 
 	static bool CanModify(CPlayer *pPlayer);
 	static bool HasPose(CPlayer *pPlayer);
@@ -35,7 +46,7 @@ public:
 	static void StepSnapID() { s_LastSnapID++; }
 
 	float Distance(vec2 Pos) const { return distance(Pos, vec2(m_Core.m_X, m_Core.m_Y)); }
-	void Snap(int SnappingClient, bool AsSpec, int SpecID);
+	void Snap(int SnappingClient);
 	int NetworkClipped(int SnappingClient);
 	int NetworkClipped(int SnappingClient, vec2 CheckPos);
 
@@ -46,12 +57,13 @@ public:
 private:
 	static CGameWorld *s_pGameWorld;
 
+	static bool s_SnapCached[MAX_CLIENTS];
+	static SPoseSnapCache s_SnapCache[MAX_CLIENTS][FAKE_MAX_CLIENTS];
 	static short s_FakeClientIDs[MAX_CLIENTS][FAKE_MAX_CLIENTS];
+	static int s_FakeEntityIDs[FAKE_MAX_CLIENTS];
 	static short s_LastSnapID;
 	static std::unordered_map<std::string, CPoseCharacter> s_PoseMap;
 	static std::unordered_map<std::string, int> s_AddressCount;
-
-	int m_EntityID;
 
 	uint8_t m_ClientPoseMap[MAX_CLIENTS];
 

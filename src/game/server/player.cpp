@@ -62,6 +62,7 @@ void CPlayer::Pose()
 
 	m_LastPoseTick = Server()->Tick();
 	m_LastBrTick = 0;
+	m_LastPoseSnapTick = 0;
 }
 
 CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
@@ -330,16 +331,19 @@ void CPlayer::Tick()
 
 		int Offset = str_format(aBuf, sizeof(aBuf), "%s\n在线玩家数: %d / %d\n共记下了 %d 个瞬间\n", CanCapture ? (HasPose ? "按 K/自杀键 取消占位" : "按 K/自杀键 拍照") : "元旦快乐！", GameServer()->m_NumPlayers, g_Config.m_SvMaxClients, GameServer()->m_NumCaptures);
 
-		if(GetCharacter())
+		if(GameServer()->m_NumPlayers < g_Config.m_SvThresholdNoNearby)
 		{
-			CCharacter *pChar = GameServer()->m_World.ClosestCharacter(GetCharacter()->m_Pos, 1000.0f, GetCharacter());
-			CPlayer *pPlayer = NULL;
-			if(pChar)
+			if(GetCharacter())
 			{
-				char aAddr[NETADDR_MAXSTRSIZE] = {0};
-				pPlayer = pChar->GetPlayer();
-				Server()->GetClientAddr(pPlayer->GetCID(), aAddr, NETADDR_MAXSTRSIZE);
-				str_format(aBuf + Offset, sizeof(aBuf) - Offset - 1, "\n\n-附近玩家:\n%s", Server()->ClientName(pPlayer->GetCID()));
+				CCharacter *pChar = GameServer()->m_World.ClosestCharacter(GetCharacter()->m_Pos, 1000.0f, GetCharacter());
+				CPlayer *pPlayer = NULL;
+				if(pChar)
+				{
+					char aAddr[NETADDR_MAXSTRSIZE] = {0};
+					pPlayer = pChar->GetPlayer();
+					Server()->GetClientAddr(pPlayer->GetCID(), aAddr, NETADDR_MAXSTRSIZE);
+					str_format(aBuf + Offset, sizeof(aBuf) - Offset - 1, "\n\n-附近玩家:\n%s", Server()->ClientName(pPlayer->GetCID()));
+				}
 			}
 		}
 

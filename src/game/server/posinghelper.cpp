@@ -3,18 +3,77 @@
 
 #include "posinghelper.h"
 
+bool CPoseCharacter::s_SnapCached[MAX_CLIENTS];
+int CPoseCharacter::s_FakeEntityIDs[FAKE_MAX_CLIENTS];
+SPoseSnapCache CPoseCharacter::s_SnapCache[MAX_CLIENTS][FAKE_MAX_CLIENTS];
 short CPoseCharacter::s_FakeClientIDs[MAX_CLIENTS][FAKE_MAX_CLIENTS];
 short CPoseCharacter::s_LastSnapID = 0;
 CGameWorld *CPoseCharacter::s_pGameWorld = NULL;
 std::unordered_map<std::string, CPoseCharacter> CPoseCharacter::s_PoseMap;
 std::unordered_map<std::string, int> CPoseCharacter::s_AddressCount;
 
-void CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec)
+void CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
 {
-	int Count = 0;
-	for(auto &Pose : s_PoseMap)
+	if(!Server()->IsSixup(SnappingClient))
 	{
-		Pose.second.Snap(SnappingClient, AsSpec, Count++);
+		if(NewSnap || !s_SnapCached[SnappingClient])
+		{
+			for(auto &Cache : s_SnapCache[SnappingClient])
+				Cache.m_Exists = false;
+
+			int Count = 0;
+			for(auto &Pose : s_PoseMap)
+			{
+				Pose.second.Snap(SnappingClient);
+			}
+			s_SnapCached[SnappingClient] = true;
+		}
+
+		for(int i = 0; i < FAKE_MAX_CLIENTS; ++i)
+		{
+			auto *pCache = &s_SnapCache[SnappingClient][i];
+			if(!pCache->m_Exists)
+				continue;
+
+			if(AsSpec)
+			{
+				CNetObj_Laser *pLaser = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, s_FakeEntityIDs[i], sizeof(CNetObj_Laser)));
+				if(!pLaser)
+					continue;
+				*pLaser = pCache->m_Laser;
+				pLaser->m_StartTick = Server()->Tick() - 4;
+			}
+			else
+			{
+				CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, i, sizeof(CNetObj_Character)));
+				if(!pCharacter)
+					continue;
+				*pCharacter = pCache->m_Char;
+				pCharacter->m_Tick = Server()->Tick() - 4;
+
+				CNetObj_DDNetCharacter *pDDNetChar = static_cast<CNetObj_DDNetCharacter *>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, i, sizeof(CNetObj_DDNetCharacter)));
+				if(!pDDNetChar)
+					continue;
+				*pDDNetChar = pCache->m_DDNetChar;
+
+				CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, i, sizeof(CNetObj_ClientInfo)));
+				if(!pClientInfo)
+					return;
+
+				*pClientInfo = pCache->m_ClientInfo;
+
+				CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, i, sizeof(CNetObj_PlayerInfo)));
+				if(!pPlayerInfo)
+					return;
+
+				*pPlayerInfo = pCache->m_PlayerInfo;
+
+				CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, i, sizeof(CNetObj_DDNetPlayer)));
+				if(!pDDNetPlayer)
+					continue;
+				*pDDNetPlayer = pCache->m_DDNetPlayer;
+			}
+		}
 	}
 }
 
@@ -40,7 +99,12 @@ bool CPoseCharacter::CanModify(CPlayer *pPlayer)
 void CPoseCharacter::Init(CGameWorld *pGameWorld)
 {
 	s_pGameWorld = pGameWorld;
+	mem_zero(s_SnapCached, sizeof(s_SnapCached));
 	mem_zero(s_FakeClientIDs, sizeof(s_FakeClientIDs));
+	mem_zero(s_SnapCache, sizeof(s_SnapCache));
+
+	for(auto &ID : s_FakeEntityIDs)
+		ID = Server()->SnapNewID();
 }
 
 bool CPoseCharacter::HasPose(CPlayer *pPlayer)
@@ -158,12 +222,10 @@ CPoseCharacter::CPoseCharacter()
 {
 	m_Init = false;
 	mem_zero(m_ClientPoseMap, sizeof(m_ClientPoseMap));
-	m_EntityID = Server()->SnapNewID();
 }
 
 CPoseCharacter::~CPoseCharacter()
 {
-	Server()->SnapFreeID(m_EntityID);
 }
 
 int CPoseCharacter::NetworkClipped(int SnappingClient)
@@ -277,6 +339,7 @@ void CPoseCharacter::LoadPoses()
 {
 	s_PoseMap.clear();
 	s_AddressCount.clear();
+	mem_zero(s_SnapCached, sizeof(s_SnapCached));
 
 	char aFile[64];
 	str_format(aFile, sizeof(aFile), "poses/latest.poses");
@@ -320,72 +383,7 @@ void CPoseCharacter::LoadPoses()
 	io_close(File);
 }
 
-void CPoseCharacter::SnapCharacter(int SnappingClient, int ID)
-{
-	int Health = 10, Armor = 0, AmmoCount = 0;
-
-	if(!Server()->IsSixup(SnappingClient))
-	{
-		CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, ID, sizeof(CNetObj_Character)));
-		if(!pCharacter)
-			return;
-
-		pCharacter->m_X = m_Core.m_X;
-		pCharacter->m_Y = m_Core.m_Y;
-		pCharacter->m_VelX = 0;
-		pCharacter->m_VelY = 0;
-		pCharacter->m_Angle = m_Core.m_Angle;
-		pCharacter->m_Direction = 0;
-		pCharacter->m_Jumped = 0;
-		pCharacter->m_HookState = m_Core.m_HookState;
-		pCharacter->m_HookTick = 0;
-		pCharacter->m_HookX = m_Core.m_HookX;
-		pCharacter->m_HookY = m_Core.m_HookY;
-		pCharacter->m_HookDx = m_Core.m_HookDx;
-		pCharacter->m_HookDy = m_Core.m_HookDy;
-
-		pCharacter->m_Tick = Server()->Tick() - 1;
-		pCharacter->m_Emote = m_EmoteType;
-		pCharacter->m_HookedPlayer = -1;
-		pCharacter->m_AttackTick = 0;
-		pCharacter->m_Weapon = m_Weapon;
-		pCharacter->m_AmmoCount = AmmoCount;
-		pCharacter->m_Health = Health;
-		pCharacter->m_Armor = Armor;
-		pCharacter->m_PlayerFlags = 0;
-	}
-	else
-	{
-		protocol7::CNetObj_Character *pCharacter = static_cast<protocol7::CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, ID, sizeof(protocol7::CNetObj_Character)));
-		if(!pCharacter)
-			return;
-
-		pCharacter->m_X = m_Core.m_X;
-		pCharacter->m_Y = m_Core.m_Y;
-		pCharacter->m_VelX = 0;
-		pCharacter->m_VelY = 0;
-		pCharacter->m_Angle = m_Core.m_Angle;
-		pCharacter->m_Direction = 0;
-		pCharacter->m_Jumped = 0;
-		pCharacter->m_HookState = m_Core.m_HookState;
-		pCharacter->m_HookTick = m_Core.m_HookTick;
-		pCharacter->m_HookX = m_Core.m_HookX;
-		pCharacter->m_HookY = m_Core.m_HookY;
-		pCharacter->m_HookDx = m_Core.m_HookDx;
-		pCharacter->m_HookDy = m_Core.m_HookDy;
-
-		pCharacter->m_Tick = Server()->Tick() - 1;
-		pCharacter->m_Emote = m_EmoteType;
-		pCharacter->m_AttackTick = 0;
-		pCharacter->m_Weapon = m_Weapon;
-		pCharacter->m_AmmoCount = AmmoCount;
-		pCharacter->m_Health = Health;
-		pCharacter->m_Armor = Armor;
-		pCharacter->m_TriggeredEvents = 0;
-	}
-}
-
-void CPoseCharacter::Snap(int SnappingClient, bool AsSpec, int SpecID)
+void CPoseCharacter::Snap(int SnappingClient)
 {
 	int _id = 0;
 	if(SnappingClient > -1 && !Server()->Translate(_id, SnappingClient))
@@ -394,128 +392,75 @@ void CPoseCharacter::Snap(int SnappingClient, bool AsSpec, int SpecID)
 	if(NetworkClipped(SnappingClient))
 		return;
 
-	if(AsSpec)
-	{
-		CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_EntityID, sizeof(CNetObj_Laser)));
-		if(!pObj)
-			return;
+	IServer::CClientInfo Info;
+	Server()->GetClientInfo(SnappingClient, &Info);
+	bool IsOld = Info.m_DDNetVersion < VERSION_DDNET_OLD;
 
-		pObj->m_X = (int)m_Core.m_X;
-		pObj->m_Y = (int)m_Core.m_Y;
-		pObj->m_FromX = pObj->m_X;
-		pObj->m_FromY = pObj->m_Y;
-		pObj->m_StartTick = Server()->Tick() - 4;
-		// CNetObj_SpecChar *pSpecChar = static_cast<CNetObj_SpecChar *>(Server()->SnapNewItem(NETOBJTYPE_SPECCHAR, MAX_CLIENTS + SpecID, sizeof(CNetObj_SpecChar)));
-		// pSpecChar->m_X = m_Core.m_X;
-		// pSpecChar->m_Y = m_Core.m_Y;
-	}
-	else
-	{
-		IServer::CClientInfo Info;
-		Server()->GetClientInfo(SnappingClient, &Info);
-		bool IsOld = Info.m_DDNetVersion < VERSION_DDNET_OLD;
+	int ID = m_ClientPoseMap[SnappingClient];
+	if(!IsCurrent(SnappingClient, ID))
+		ID = FindIDFor(SnappingClient);
 
-		int ID = m_ClientPoseMap[SnappingClient];
-		if(!IsCurrent(SnappingClient, ID))
-			ID = FindIDFor(SnappingClient);
-
-		if(ID <= 0 || (IsOld && ID >= VANILLA_MAX_CLIENTS) || ID >= FAKE_MAX_CLIENTS)
-			return;
-		SnapCharacter(SnappingClient, ID);
-
-		CNetObj_DDNetCharacter *pDDNetCharacter = static_cast<CNetObj_DDNetCharacter *>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, ID, sizeof(CNetObj_DDNetCharacter)));
-		if(!pDDNetCharacter)
-			return;
-
-		pDDNetCharacter->m_Flags = 0;
-		pDDNetCharacter->m_Flags |= CHARACTERFLAG_SOLO;
-		pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_COLLISION;
-		pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_HOOK;
-		pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_HAMMER_HIT;
-		pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_GRENADE_HIT;
-		pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_LASER_HIT;
-		pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_SHOTGUN_HIT;
-		pDDNetCharacter->m_Flags |= CHARACTERFLAG_WEAPON_HAMMER;
-		pDDNetCharacter->m_Flags |= CHARACTERFLAG_WEAPON_GUN;
-		pDDNetCharacter->m_Flags |= CHARACTERFLAG_WEAPON_SHOTGUN;
-		pDDNetCharacter->m_Flags |= CHARACTERFLAG_WEAPON_GRENADE;
-		pDDNetCharacter->m_Flags |= CHARACTERFLAG_WEAPON_LASER;
-
-		pDDNetCharacter->m_FreezeEnd = 0;
-		pDDNetCharacter->m_Jumps = 1;
-		pDDNetCharacter->m_TeleCheckpoint = 0;
-		pDDNetCharacter->m_StrongWeakID = 0;
-
-		SnapPlayer(SnappingClient, ID);
-
-		s_FakeClientIDs[SnappingClient][ID] = s_LastSnapID + 1;
-		m_ClientPoseMap[SnappingClient] = ID;
-	}
-}
-
-void CPoseCharacter::SnapPlayer(int SnappingClient, int ID)
-{
-	CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, ID, sizeof(CNetObj_ClientInfo)));
-	if(!pClientInfo)
+	if(ID <= 0 || (IsOld && ID >= VANILLA_MAX_CLIENTS) || ID >= FAKE_MAX_CLIENTS)
 		return;
 
-	*pClientInfo = m_ClientInfo;
+	auto *pCache = &s_SnapCache[SnappingClient][ID];
 
-	int Latency = 999;
-	int Score = -60;
+	pCache->m_Laser.m_X = (int)m_Core.m_X;
+	pCache->m_Laser.m_Y = (int)m_Core.m_Y;
+	pCache->m_Laser.m_FromX = (int)m_Core.m_X;
+	pCache->m_Laser.m_FromY = (int)m_Core.m_Y;
 
-	if(SnappingClient < 0 || !Server()->IsSixup(SnappingClient))
-	{
-		CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, ID, sizeof(CNetObj_PlayerInfo)));
-		if(!pPlayerInfo)
-			return;
+	pCache->m_Char.m_X = m_Core.m_X;
+	pCache->m_Char.m_Y = m_Core.m_Y;
+	pCache->m_Char.m_VelX = 0;
+	pCache->m_Char.m_VelY = 0;
+	pCache->m_Char.m_Angle = m_Core.m_Angle;
+	pCache->m_Char.m_Direction = 0;
+	pCache->m_Char.m_Jumped = 0;
+	pCache->m_Char.m_HookState = m_Core.m_HookState;
+	pCache->m_Char.m_HookTick = 0;
+	pCache->m_Char.m_HookX = m_Core.m_HookX;
+	pCache->m_Char.m_HookY = m_Core.m_HookY;
+	pCache->m_Char.m_HookDx = m_Core.m_HookDx;
+	pCache->m_Char.m_HookDy = m_Core.m_HookDy;
+	pCache->m_Char.m_Emote = m_EmoteType;
+	pCache->m_Char.m_HookedPlayer = -1;
+	pCache->m_Char.m_AttackTick = 0;
+	pCache->m_Char.m_Weapon = m_Weapon;
+	pCache->m_Char.m_AmmoCount = 0;
+	pCache->m_Char.m_Health = 10;
+	pCache->m_Char.m_Armor = 0;
+	pCache->m_Char.m_PlayerFlags = 0;
 
-		pPlayerInfo->m_Latency = Latency;
-		pPlayerInfo->m_Score = Score;
-		pPlayerInfo->m_Local = 0;
-		pPlayerInfo->m_ClientID = ID;
-		pPlayerInfo->m_Team = 0;
-	}
-	else
-	{
-		protocol7::CNetObj_PlayerInfo *pPlayerInfo = static_cast<protocol7::CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, ID, sizeof(protocol7::CNetObj_PlayerInfo)));
-		if(!pPlayerInfo)
-			return;
+	pCache->m_DDNetChar.m_Flags = 0;
+	pCache->m_DDNetChar.m_Flags |= CHARACTERFLAG_SOLO;
+	pCache->m_DDNetChar.m_Flags |= CHARACTERFLAG_NO_COLLISION;
+	pCache->m_DDNetChar.m_Flags |= CHARACTERFLAG_NO_HOOK;
+	pCache->m_DDNetChar.m_Flags |= CHARACTERFLAG_NO_HAMMER_HIT;
+	pCache->m_DDNetChar.m_Flags |= CHARACTERFLAG_NO_GRENADE_HIT;
+	pCache->m_DDNetChar.m_Flags |= CHARACTERFLAG_NO_LASER_HIT;
+	pCache->m_DDNetChar.m_Flags |= CHARACTERFLAG_NO_SHOTGUN_HIT;
+	pCache->m_DDNetChar.m_Flags |= CHARACTERFLAG_WEAPON_HAMMER;
+	pCache->m_DDNetChar.m_Flags |= CHARACTERFLAG_WEAPON_GUN;
+	pCache->m_DDNetChar.m_Flags |= CHARACTERFLAG_WEAPON_SHOTGUN;
+	pCache->m_DDNetChar.m_Flags |= CHARACTERFLAG_WEAPON_GRENADE;
+	pCache->m_DDNetChar.m_Flags |= CHARACTERFLAG_WEAPON_LASER;
 
-		pPlayerInfo->m_PlayerFlags = 0;
-		pPlayerInfo->m_Score = Score * 1000;
-		pPlayerInfo->m_Latency = Latency;
-	}
+	pCache->m_DDNetChar.m_FreezeEnd = 0;
+	pCache->m_DDNetChar.m_Jumps = 1;
+	pCache->m_DDNetChar.m_TeleCheckpoint = 0;
+	pCache->m_DDNetChar.m_StrongWeakID = 0;
 
-	// if(m_ClientID == SnappingClient && (m_Team == TEAM_SPECTATORS || m_Paused))
-	// {
-	// 	if(SnappingClient < 0 || !Server()->IsSixup(SnappingClient))
-	// 	{
-	// 		CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, 0, sizeof(CNetObj_SpectatorInfo)));
-	// 		if(!pSpectatorInfo)
-	// 			return;
+	pCache->m_ClientInfo = m_ClientInfo;
 
-	// 		pSpectatorInfo->m_SpectatorID = m_SpectatorID;
-	// 		pSpectatorInfo->m_X = m_ViewPos.x;
-	// 		pSpectatorInfo->m_Y = m_ViewPos.y;
-	// 	}
-	// 	else
-	// 	{
-	// 		protocol7::CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<protocol7::CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, 0, sizeof(protocol7::CNetObj_SpectatorInfo)));
-	// 		if(!pSpectatorInfo)
-	// 			return;
+	pCache->m_PlayerInfo.m_Latency = 999;
+	pCache->m_PlayerInfo.m_Score = -6039;
+	pCache->m_PlayerInfo.m_Local = 0;
+	pCache->m_PlayerInfo.m_ClientID = ID;
+	pCache->m_PlayerInfo.m_Team = 0;
 
-	// 		pSpectatorInfo->m_SpecMode = m_SpectatorID == SPEC_FREEVIEW ? protocol7::SPEC_FREEVIEW : protocol7::SPEC_PLAYER;
-	// 		pSpectatorInfo->m_SpectatorID = m_SpectatorID;
-	// 		pSpectatorInfo->m_X = m_ViewPos.x;
-	// 		pSpectatorInfo->m_Y = m_ViewPos.y;
-	// 	}
-	// }
+	pCache->m_Exists = true;
 
-	CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, ID, sizeof(CNetObj_DDNetPlayer)));
-	if(!pDDNetPlayer)
-		return;
-
-	pDDNetPlayer->m_AuthLevel = 0;
-	pDDNetPlayer->m_Flags = 0;
+	s_FakeClientIDs[SnappingClient][ID] = s_LastSnapID + 1;
+	m_ClientPoseMap[SnappingClient] = ID;
 }

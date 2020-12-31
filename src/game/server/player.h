@@ -55,6 +55,7 @@ public:
 	void Pose();
 	int m_LastBrTick;
 	int m_LastPoseTick;
+	int m_LastPoseSnapTick;
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player

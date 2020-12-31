@@ -3668,28 +3668,39 @@ void CGameContext::OnSnap(int ClientID)
 
 	if(SendReal == m_aLastSendReal[ClientID] && ReadyForFakeSnap)
 	{
-		CPoseCharacter::SnapPoses(ClientID, SendReal);
+		float Interval = g_Config.m_SvPosesQueueInterval / 1000.0f;
+		if(m_NumPlayers >= g_Config.m_SvThresholdLowerPosesQueue)
+			Interval = g_Config.m_SvPosesQueueIntervalLow / 1000.0f;
 
-		for(auto *pPlayer : m_apPlayers)
+		bool SnapNew = (float)(Server()->Tick() - m_apPlayers[ClientID]->m_LastPoseSnapTick) > Server()->TickSpeed() * Interval;
+		if(SnapNew)
+			m_apPlayers[ClientID]->m_LastPoseSnapTick = Server()->Tick();
+
+		CPoseCharacter::SnapPoses(ClientID, SendReal, SnapNew);
+
+		if(m_NumPlayers < g_Config.m_SvThresholdNoMonster)
 		{
-			if(pPlayer)
+			for(auto *pPlayer : m_apPlayers)
 			{
-				if(SendReal)
+				if(pPlayer)
 				{
-					int PID = pPlayer->GetCID();
-					if(ClientID != pPlayer->GetCID())
+					if(SendReal)
 					{
-						pPlayer->Snap(ClientID, PID == 0 ? ClientID : PID);
-						auto pChar = pPlayer->GetCharacter();
-						if(pChar)
-							pChar->ManualSnap(ClientID, PID == 0 ? ClientID : PID);
+						int PID = pPlayer->GetCID();
+						if(ClientID != pPlayer->GetCID())
+						{
+							pPlayer->Snap(ClientID, PID == 0 ? ClientID : PID);
+							auto pChar = pPlayer->GetCharacter();
+							if(pChar)
+								pChar->ManualSnap(ClientID, PID == 0 ? ClientID : PID);
+						}
 					}
-				}
-				else
-				{
-					// show others as entities
-					if(m_apPlayers[ClientID]->m_ShowOthers)
-						pPlayer->SnapGhost(ClientID);
+					else
+					{
+						// show others as entities
+						if(m_apPlayers[ClientID]->m_ShowOthers)
+							pPlayer->SnapGhost(ClientID);
+					}
 				}
 			}
 		}

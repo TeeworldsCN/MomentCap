@@ -254,6 +254,9 @@ void CLaser::TickPaused()
 
 void CLaser::Snap(int SnappingClient)
 {
+	if(GameServer()->m_NumPlayers >= g_Config.m_SvThresholdNoEntity && m_Owner != SnappingClient)
+		return;
+
 	if(NetworkClipped(SnappingClient))
 		return;
 	CCharacter *OwnerChar = 0;

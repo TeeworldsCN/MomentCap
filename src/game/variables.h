@@ -187,6 +187,12 @@ MACRO_CONFIG_INT(SvCaptureInterval, sv_capture_interval, 5, 0, 60, CFGFLAG_SERVE
 MACRO_CONFIG_INT(SvMaxCapturePerIP, sv_max_capture_per_ip, 2, 1, 60, CFGFLAG_SERVER, "Max capture per IP")
 MACRO_CONFIG_INT(SvCaptureDelay, sv_capture_delay, 10, 1, 60, CFGFLAG_SERVER, "Time to wait before you can capture")
 MACRO_CONFIG_INT(SvSaveInterval, sv_save_interval, 40, 0, 18000, CFGFLAG_SERVER, "Regular save interval")
+MACRO_CONFIG_INT(SvThresholdNoEntity, sv_threshold_no_entity, 192, 0, MAX_CLIENTS, CFGFLAG_SERVER, "Num clients until no entity")
+MACRO_CONFIG_INT(SvThresholdNoMonster, sv_threshold_no_monster, 128, 0, MAX_CLIENTS, CFGFLAG_SERVER, "Num clients until no monster")
+MACRO_CONFIG_INT(SvThresholdNoNearby, sv_threshold_no_nearby, 96, 0, MAX_CLIENTS, CFGFLAG_SERVER, "Num clients until no nearby")
+MACRO_CONFIG_INT(SvThresholdLowerPosesQueue, sv_threshold_lower_poses, 96, 0, MAX_CLIENTS, CFGFLAG_SERVER, "Num clients until low freq")
+MACRO_CONFIG_INT(SvPosesQueueInterval, sv_poses_queue_interval, 250, 0, 10000, CFGFLAG_SERVER, "Poses update freqency (ms)")
+MACRO_CONFIG_INT(SvPosesQueueIntervalLow, sv_poses_queue_interval_low, 1500, 0, 10000, CFGFLAG_SERVER, "Poses update freqency (ms) if threshold")
 
 MACRO_CONFIG_INT(ClVideoPauseWithDemo, cl_video_pausewithdemo, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Pause video rendering when demo playing pause")
 MACRO_CONFIG_INT(ClVideoShowhud, cl_video_showhud, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ingame HUD when rendering video")
