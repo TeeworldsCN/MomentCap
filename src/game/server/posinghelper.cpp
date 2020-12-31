@@ -73,6 +73,8 @@ void CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
 					continue;
 				*pDDNetPlayer = pCache->m_DDNetPlayer;
 			}
+
+			s_FakeClientIDs[SnappingClient][i] = s_LastSnapID + 1;
 		}
 	}
 }
@@ -461,6 +463,5 @@ void CPoseCharacter::Snap(int SnappingClient)
 
 	pCache->m_Exists = true;
 
-	s_FakeClientIDs[SnappingClient][ID] = s_LastSnapID + 1;
 	m_ClientPoseMap[SnappingClient] = ID;
 }
