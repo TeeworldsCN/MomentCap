@@ -151,6 +151,46 @@ bool CPoseCharacter::RemovePoseByName(const char *pName)
 	return false;
 }
 
+bool CPoseCharacter::MovePose(const char *pName, int X, int Y)
+{
+	std::string Key(pName);
+	if(s_PoseMap.count(Key))
+	{
+		auto &Pose = s_PoseMap[Key];
+		Pose.m_Core.m_X += X;
+		Pose.m_Core.m_Y += Y;
+		return true;
+	}
+
+	return false;
+}
+
+// bool CPoseCharacter::PoseHookLengthDelta(const char *pName, int Delta, int Asker)
+// {
+// 	std::string Key(pName);
+// 	if(s_PoseMap.count(Key))
+// 	{
+// 		auto &Pose = s_PoseMap[Key];
+// 		if(Pose.m_Core.m_HookState == HOOK_GRABBED)
+// 		{
+// 			GameServer()->SendChatTarget(Asker, "不能再长了啦");
+// 		}
+// 		dbg_msg("test", "hook state: %d", Pose.m_Core.m_HookState);
+// 		return true;
+// 	}
+
+// 	return false;
+// }
+
+const CPoseCharacter *CPoseCharacter::FindPoseByName(const char *pName)
+{
+	std::string Key(pName);
+	if(s_PoseMap.count(Key))
+		return &s_PoseMap[Key];
+
+	return NULL;
+}
+
 bool CPoseCharacter::Pose(CPlayer *pPlayer)
 {
 	if(!CanModify(pPlayer))
@@ -183,10 +223,10 @@ bool CPoseCharacter::Pose(CPlayer *pPlayer)
 		}
 	}
 
-	auto &Pose = s_PoseMap[Key];
-
 	if(pPlayer->GetCharacter())
 	{
+		auto &Pose = s_PoseMap[Key];
+
 		if(Exists)
 			s_AddressCount[Pose.m_aAddr]--;
 
@@ -196,9 +236,35 @@ bool CPoseCharacter::Pose(CPlayer *pPlayer)
 		Pose.m_Init = true;
 	}
 
-	if(!Pose.m_Init)
+	return true;
+}
+
+bool CPoseCharacter::PoseWithName(CPlayer *pPlayer, const char *pName)
+{
+	std::string Key(pName);
+
+	if(s_PoseMap.count(Key))
+		return false;
+
+	if(pPlayer->GetCharacter())
 	{
-		s_PoseMap.erase(Key);
+		auto &Pose = s_PoseMap[Key];
+
+		Pose.WriteCharacter(pPlayer->GetCharacter());
+
+		StrToInts(&Pose.m_ClientInfo.m_Name0, 4, pName);
+		StrToInts(&Pose.m_ClientInfo.m_Clan0, 3, pName);
+		Pose.m_ClientInfo.m_Country = Server()->ClientCountry(pPlayer->GetCID());
+		StrToInts(&Pose.m_ClientInfo.m_Skin0, 6, pPlayer->m_TeeInfos.m_SkinName);
+		Pose.m_ClientInfo.m_UseCustomColor = pPlayer->m_TeeInfos.m_UseCustomColor;
+		Pose.m_ClientInfo.m_ColorBody = pPlayer->m_TeeInfos.m_ColorBody;
+		Pose.m_ClientInfo.m_ColorFeet = pPlayer->m_TeeInfos.m_ColorFeet;
+
+		Server()->GetClientAddr(pPlayer->GetCID(), Pose.m_aAddr, NETADDR_MAXSTRSIZE);
+		str_copy(Pose.m_aTimeoutCode, pPlayer->m_TimeoutCode, 64);
+
+		s_AddressCount[Pose.m_aAddr]++;
+		Pose.m_Init = true;
 	}
 
 	return true;
@@ -253,11 +319,11 @@ int CPoseCharacter::NetworkClipped(int SnappingClient, vec2 CheckPos)
 	// pose should be nearby only
 
 	float dx = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.x - CheckPos.x;
-	if(absolute(dx) > 1000)
+	if(absolute(dx) > g_Config.m_SvPosesShowDistanceX)
 		return 1;
 
 	float dy = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.y - CheckPos.y;
-	if(absolute(dy) > 800)
+	if(absolute(dy) > g_Config.m_SvPosesShowDistanceY)
 		return 1;
 
 	return 0;
@@ -429,7 +495,7 @@ void CPoseCharacter::Snap(int SnappingClient)
 	pCache->m_Char.m_Angle = m_Core.m_Angle;
 	pCache->m_Char.m_Direction = 0;
 	pCache->m_Char.m_Jumped = 0;
-	pCache->m_Char.m_HookState = m_Core.m_HookState;
+	pCache->m_Char.m_HookState = m_Core.m_HookState > HOOK_IDLE ? HOOK_GRABBED : HOOK_IDLE;
 	pCache->m_Char.m_HookTick = 0;
 	pCache->m_Char.m_HookX = m_Core.m_HookX;
 	pCache->m_Char.m_HookY = m_Core.m_HookY;

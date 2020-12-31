@@ -93,6 +93,11 @@ class CGameContext : public IGameServer
 	static void ConSaveCaptures(IConsole::IResult *pResult, void *pUserData);
 	static void ConLoadCaptures(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveCapture(IConsole::IResult *pResult, void *pUserData);
+	static void ConFindCapture(IConsole::IResult *pResult, void *pUserData);
+	static void ConForceCapture(IConsole::IResult *pResult, void *pUserData);
+	static void ConMoveCapture(IConsole::IResult *pResult, void *pUserData);
+	// static void ConCaptureHookPlus(IConsole::IResult *pResult, void *pUserData);
+	// static void ConCaptureHookMinus(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConToggleTuneParam(IConsole::IResult *pResult, void *pUserData);

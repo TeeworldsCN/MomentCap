@@ -193,6 +193,8 @@ MACRO_CONFIG_INT(SvThresholdNoNearby, sv_threshold_no_nearby, 96, 0, MAX_CLIENTS
 MACRO_CONFIG_INT(SvThresholdLowerPosesQueue, sv_threshold_lower_poses, 96, 0, MAX_CLIENTS, CFGFLAG_SERVER, "Num clients until low freq")
 MACRO_CONFIG_INT(SvPosesQueueInterval, sv_poses_queue_interval, 250, 0, 10000, CFGFLAG_SERVER, "Poses update freqency (ms)")
 MACRO_CONFIG_INT(SvPosesQueueIntervalLow, sv_poses_queue_interval_low, 1500, 0, 10000, CFGFLAG_SERVER, "Poses update freqency (ms) if threshold")
+MACRO_CONFIG_INT(SvPosesShowDistanceX, sv_poses_show_dist_x, 1000, 0, 10000, CFGFLAG_SERVER, "Poses clip range x")
+MACRO_CONFIG_INT(SvPosesShowDistanceY, sv_poses_show_dist_y, 800, 0, 10000, CFGFLAG_SERVER, "Poses clip range y")
 
 MACRO_CONFIG_INT(ClVideoPauseWithDemo, cl_video_pausewithdemo, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Pause video rendering when demo playing pause")
 MACRO_CONFIG_INT(ClVideoShowhud, cl_video_showhud, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ingame HUD when rendering video")

@@ -3043,6 +3043,118 @@ void CGameContext::ConRemoveCapture(IConsole::IResult *pResult, void *pUserData)
 		pSelf->SendChatTarget(pResult->m_ClientID, "未找到记录");
 }
 
+void CGameContext::ConForceCapture(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!pSelf->Server()->ClientAuthed(pResult->m_ClientID))
+		return;
+
+	if(pResult->m_ClientID < 0 || pResult->m_ClientID >= MAX_CLIENTS)
+		return;
+
+	CPlayer *pPlayer = pSelf->m_apPlayers[pResult->m_ClientID];
+	if(!pPlayer)
+		return;
+
+	if(*pResult->GetString(0))
+	{
+		if(CPoseCharacter::PoseWithName(pPlayer, pResult->GetString(0)))
+			pSelf->SendChatTarget(pResult->m_ClientID, "添加成功");
+		else
+			pSelf->SendChatTarget(pResult->m_ClientID, "已有该记录");
+	}
+}
+
+void CGameContext::ConFindCapture(IConsole::IResult *pResult, void *pUserData)
+{
+	if(pResult->m_ClientID < 0 || pResult->m_ClientID >= MAX_CLIENTS)
+		return;
+
+	CGameContext *pSelf = (CGameContext *)pUserData;
+
+	CPlayer *pPlayer = pSelf->m_apPlayers[pResult->m_ClientID];
+	if(!pPlayer)
+		return;
+
+	if(pSelf->Server()->Tick() - pPlayer->m_LastPoseCommand < pSelf->Server()->TickSpeed() * 2)
+	{
+		pSelf->SendChatTarget(pResult->m_ClientID, "亲，您慢一点。");
+		return;
+	}
+	pPlayer->m_LastPoseCommand = pSelf->Server()->Tick();
+
+	const CPoseCharacter *pPose = CPoseCharacter::FindPoseByName(pResult->GetString(0));
+
+	if(!pPose)
+	{
+		pPlayer->Pause(CPlayer::PAUSE_NONE, false);
+		pSelf->SendChatTarget(pResult->m_ClientID, "未找到留影记录");
+	}
+	else
+	{
+		pPlayer->Pause(CPlayer::PAUSE_PAUSED, false);
+		pPlayer->m_ForcingViewPos = 2;
+		pPlayer->m_ForcedViewPos = pPose->Position();
+	}
+}
+
+void CGameContext::ConMoveCapture(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!pSelf->Server()->ClientAuthed(pResult->m_ClientID))
+		return;
+
+	if(pResult->m_ClientID < 0 || pResult->m_ClientID >= MAX_CLIENTS)
+		return;
+
+	CPlayer *pPlayer = pSelf->m_apPlayers[pResult->m_ClientID];
+	if(!pPlayer)
+		return;
+
+	if(CPoseCharacter::MovePose(pResult->GetString(0), pResult->GetInteger(1), pResult->GetInteger(2)))
+		pSelf->SendChatTarget(pResult->m_ClientID, "移动成功");
+	else
+		pSelf->SendChatTarget(pResult->m_ClientID, "未找到记录");
+}
+
+// void CGameContext::ConCaptureHookPlus(IConsole::IResult *pResult, void *pUserData)
+// {
+// 	CGameContext *pSelf = (CGameContext *)pUserData;
+
+// 	if(pResult->m_ClientID < 0 || pResult->m_ClientID >= MAX_CLIENTS)
+// 		return;
+
+// 	CPlayer *pPlayer = pSelf->m_apPlayers[pResult->m_ClientID];
+// 	if(!pPlayer)
+// 		return;
+
+// 	const char *pName = pSelf->Server()->ClientName(pPlayer->GetCID());
+
+// 	if(pSelf->Server()->ClientAuthed(pResult->m_ClientID) && *pResult->GetString(0))
+// 		pName = pResult->GetString(0);
+
+// 	CPoseCharacter::PoseHookLengthDelta(pName, 10);
+// }
+
+// void CGameContext::ConCaptureHookMinus(IConsole::IResult *pResult, void *pUserData)
+// {
+// 	CGameContext *pSelf = (CGameContext *)pUserData;
+
+// 	if(pResult->m_ClientID < 0 || pResult->m_ClientID >= MAX_CLIENTS)
+// 		return;
+
+// 	CPlayer *pPlayer = pSelf->m_apPlayers[pResult->m_ClientID];
+// 	if(!pPlayer)
+// 		return;
+
+// 	const char *pName = pSelf->Server()->ClientName(pPlayer->GetCID());
+
+// 	if(pSelf->Server()->ClientAuthed(pResult->m_ClientID) && *pResult->GetString(0))
+// 		pName = pResult->GetString(0);
+
+// 	CPoseCharacter::PoseHookLengthDelta(pName, -10);
+//}
+
 void CGameContext::ConVote(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;

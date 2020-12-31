@@ -56,9 +56,12 @@ public:
 	int m_LastBrTick;
 	int m_LastPoseTick;
 	int m_LastPoseSnapTick;
+	int m_LastPoseCommand;
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
+	int m_ForcingViewPos;
+	vec2 m_ForcedViewPos;
 	vec2 m_ViewPos;
 	int m_TuneZone;
 	int m_TuneZoneOld;

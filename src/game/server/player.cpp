@@ -89,6 +89,10 @@ CPlayer::~CPlayer()
 
 void CPlayer::Reset()
 {
+	m_ForcingViewPos = 0;
+	m_ForcedViewPos = vec2(0, 0);
+
+	m_LastPoseCommand = 0;
 	m_LastBrTick = Server()->Tick() + 4;
 	m_LastPoseTick = 0;
 	m_DieTick = Server()->Tick();
@@ -558,18 +562,26 @@ void CPlayer::Snap(int SnappingClient, int FakeID)
 
 	if(m_ClientID == SnappingClient && (m_Team == TEAM_SPECTATORS || m_Paused))
 	{
+		int SpecID = m_SpectatorID;
+		// HACK: force spec follow
+		if(m_ForcingViewPos > 0)
+		{
+			m_ForcingViewPos--;
+			m_ViewPos = m_ForcedViewPos;
+			SpecID = 0;
+		}
+
 		if(SnappingClient < 0 || !Server()->IsSixup(SnappingClient))
 		{
 			CNetObj_SpectatorInfo *pSpectatorInfo = static_cast<CNetObj_SpectatorInfo *>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, FakeID, sizeof(CNetObj_SpectatorInfo)));
 			if(!pSpectatorInfo)
 				return;
 
-			// HACK: force spec follow
-			pSpectatorInfo->m_SpectatorID = m_SpectatorID;
+			pSpectatorInfo->m_SpectatorID = SpecID;
 			pSpectatorInfo->m_X = m_ViewPos.x;
 			pSpectatorInfo->m_Y = m_ViewPos.y;
 
-			if(m_SpectatorID != SPEC_FREEVIEW)
+			if(pSpectatorInfo->m_SpectatorID != SPEC_FREEVIEW)
 			{
 				pSpectatorInfo->m_SpectatorID = 0;
 			}
@@ -580,9 +592,9 @@ void CPlayer::Snap(int SnappingClient, int FakeID)
 			if(!pSpectatorInfo)
 				return;
 
-			pSpectatorInfo->m_SpecMode = m_SpectatorID == SPEC_FREEVIEW ? protocol7::SPEC_FREEVIEW : protocol7::SPEC_PLAYER;
-			pSpectatorInfo->m_SpectatorID = m_SpectatorID;
-			if(m_SpectatorID != SPEC_FREEVIEW)
+			pSpectatorInfo->m_SpecMode = SpecID == SPEC_FREEVIEW ? protocol7::SPEC_FREEVIEW : protocol7::SPEC_PLAYER;
+			pSpectatorInfo->m_SpectatorID = SpecID;
+			if(pSpectatorInfo->m_SpectatorID != SPEC_FREEVIEW)
 			{
 				pSpectatorInfo->m_SpectatorID = 0;
 			}

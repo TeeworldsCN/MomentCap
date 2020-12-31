@@ -30,13 +30,21 @@ public:
 	static class IServer *Server() { return GameWorld()->Server(); }
 	static void SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap);
 
+	static const CPoseCharacter *FindPoseByName(const char *pName);
+
 	static bool CanModify(CPlayer *pPlayer);
 	static bool HasPose(CPlayer *pPlayer);
 	static bool RemovePose(CPlayer *pPlayer);
-	static bool RemovePoseByName(const char *pName);
 	static bool Pose(CPlayer *pPlayer);
+
+	// auth tool
+	static bool RemovePoseByName(const char *pName);
+	static bool MovePose(const char *pName, int X, int Y);
+	static bool PoseWithName(CPlayer *pPlayer, const char *pName);
+	// static bool PoseHookLengthDelta(const char *pName, int Delta, int Asker);
 	static void SavePoses();
 	static void LoadPoses();
+
 	static const CPoseCharacter *ClosestPose(vec2 Pos, float Radius);
 	static int Count() { return s_PoseMap.size(); }
 
@@ -45,6 +53,7 @@ public:
 	static bool IsCurrent(int SnappingClient, int FakeID);
 	static void StepSnapID() { s_LastSnapID++; }
 
+	vec2 Position() const { return vec2(m_Core.m_X, m_Core.m_Y); }
 	float Distance(vec2 Pos) const { return distance(Pos, vec2(m_Core.m_X, m_Core.m_Y)); }
 	void Snap(int SnappingClient);
 	int NetworkClipped(int SnappingClient);
