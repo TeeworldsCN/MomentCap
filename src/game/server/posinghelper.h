@@ -59,9 +59,10 @@ private:
 
 	static bool s_SnapCached[MAX_CLIENTS];
 	static SPoseSnapCache s_SnapCache[MAX_CLIENTS][FAKE_MAX_CLIENTS];
-	static uint8_t s_FakeClientIDs[MAX_CLIENTS][FAKE_MAX_CLIENTS];
 	static int s_FakeEntityIDs[FAKE_MAX_CLIENTS];
-	static uint8_t s_LastSnapID;
+
+	static int8_t s_FakeClientIDs[MAX_CLIENTS][FAKE_MAX_CLIENTS];
+	static int8_t s_LastSnapID;
 	static std::unordered_map<std::string, CPoseCharacter> s_PoseMap;
 	static std::unordered_map<std::string, int> s_AddressCount;
 

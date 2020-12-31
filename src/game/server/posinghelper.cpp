@@ -6,8 +6,10 @@
 bool CPoseCharacter::s_SnapCached[MAX_CLIENTS];
 int CPoseCharacter::s_FakeEntityIDs[FAKE_MAX_CLIENTS];
 SPoseSnapCache CPoseCharacter::s_SnapCache[MAX_CLIENTS][FAKE_MAX_CLIENTS];
-uint8_t CPoseCharacter::s_FakeClientIDs[MAX_CLIENTS][FAKE_MAX_CLIENTS];
-uint8_t CPoseCharacter::s_LastSnapID = 0;
+
+int8_t CPoseCharacter::s_FakeClientIDs[MAX_CLIENTS][FAKE_MAX_CLIENTS];
+int8_t CPoseCharacter::s_LastSnapID = 0;
+
 CGameWorld *CPoseCharacter::s_pGameWorld = NULL;
 std::unordered_map<std::string, CPoseCharacter> CPoseCharacter::s_PoseMap;
 std::unordered_map<std::string, int> CPoseCharacter::s_AddressCount;
@@ -200,7 +202,7 @@ bool CPoseCharacter::Pose(CPlayer *pPlayer)
 
 int CPoseCharacter::FindIDFor(int SnappingClient)
 {
-	for(int i = 1; i < MAX_CLIENTS; ++i)
+	for(int i = 1; i < FAKE_MAX_CLIENTS; ++i)
 	{
 		if(s_FakeClientIDs[SnappingClient][i] < s_LastSnapID - 1)
 		{
