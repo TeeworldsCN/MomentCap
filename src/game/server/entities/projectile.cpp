@@ -299,6 +299,9 @@ void CProjectile::Snap(int SnappingClient)
 	if(GameServer()->m_NumPlayers >= g_Config.m_SvThresholdNoEntity && m_Owner != SnappingClient)
 		return;
 
+	if(!GameServer()->m_apPlayers[SnappingClient]->m_ShowOthers && m_Owner != SnappingClient)
+		return;
+
 	if(NetworkClipped(SnappingClient, GetPos(Ct)))
 		return;
 
