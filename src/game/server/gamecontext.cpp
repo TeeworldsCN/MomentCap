@@ -3094,6 +3094,7 @@ void CGameContext::ConFindCapture(IConsole::IResult *pResult, void *pUserData)
 	{
 		pPlayer->Pause(CPlayer::PAUSE_PAUSED, false);
 		pPlayer->m_ForcingViewPos = 2;
+		pPlayer->m_SpectatorID = SPEC_FREEVIEW;
 		pPlayer->m_ForcedViewPos = pPose->Position();
 	}
 }
