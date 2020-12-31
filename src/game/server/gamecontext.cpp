@@ -4,7 +4,7 @@
 
 #include "gamecontext.h"
 #include "teeinfo.h"
-#include <antibot/antibot_data.h>
+// #include <antibot/antibot_data.h>
 #include <base/math.h>
 #include <engine/console.h>
 #include <engine/engine.h>
@@ -24,7 +24,7 @@
 #include <game/generated/protocolglue.h>
 
 #include "gamemodes/DDRace.h"
-#include "score.h"
+// #include "score.h"
 
 #include <game/server/posinghelper.h>
 
@@ -56,7 +56,7 @@ void CGameContext::Construct(int Resetting)
 	if(Resetting == NO_RESET)
 	{
 		m_pVoteOptionHeap = new CHeap();
-		m_pScore = 0;
+		// m_pScore = 0;
 		m_NumMutes = 0;
 		m_NumVoteMutes = 0;
 	}
@@ -82,8 +82,8 @@ CGameContext::~CGameContext()
 	if(!m_Resetting)
 		delete m_pVoteOptionHeap;
 
-	if(m_pScore)
-		delete m_pScore;
+	// if(m_pScore)
+	// 	delete m_pScore;
 }
 
 void CGameContext::Clear()
@@ -739,12 +739,6 @@ void CGameContext::OnTick()
 {
 	if(Server()->Tick() - m_LastCountPlayersTick > 2 * Server()->TickSpeed())
 	{
-		m_NumPlayers = 0;
-		for(int i = 0; i < MAX_CLIENTS; i++)
-		{
-			if(m_apPlayers[i])
-				m_NumPlayers++;
-		}
 		m_NumCaptures = CPoseCharacter::Count();
 		m_LastCountPlayersTick = Server()->Tick();
 	}
@@ -1404,6 +1398,16 @@ void CGameContext::OnClientConnected(int ClientID)
 	}
 
 	Server()->ExpireServerInfo();
+
+	m_NumPlayers = 0;
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(m_apPlayers[i])
+		{
+			m_MaxClientID = i;
+			m_NumPlayers++;
+		}
+	}
 }
 
 void CGameContext::OnClientDrop(int ClientID, const char *pReason)
@@ -1412,6 +1416,16 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 	m_apPlayers[ClientID]->OnDisconnect(pReason);
 	delete m_apPlayers[ClientID];
 	m_apPlayers[ClientID] = 0;
+
+	m_NumPlayers = 0;
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(m_apPlayers[i])
+		{
+			m_MaxClientID = i;
+			m_NumPlayers++;
+		}
+	}
 
 	//(void)m_pController->CheckTeamBalance();
 	m_VoteUpdate = true;
@@ -2645,23 +2659,23 @@ void CGameContext::ConChangeMap(IConsole::IResult *pResult, void *pUserData)
 	pSelf->m_pController->ChangeMap(pResult->NumArguments() ? pResult->GetString(0) : "");
 }
 
-void CGameContext::ConRandomMap(IConsole::IResult *pResult, void *pUserData)
-{
-	CGameContext *pSelf = (CGameContext *)pUserData;
+// void CGameContext::ConRandomMap(IConsole::IResult *pResult, void *pUserData)
+// {
+// 	CGameContext *pSelf = (CGameContext *)pUserData;
 
-	int Stars = pResult->NumArguments() ? pResult->GetInteger(0) : -1;
+// 	int Stars = pResult->NumArguments() ? pResult->GetInteger(0) : -1;
 
-	pSelf->m_pScore->RandomMap(pSelf->m_VoteCreator, Stars);
-}
+// 	pSelf->m_pScore->RandomMap(pSelf->m_VoteCreator, Stars);
+// }
 
-void CGameContext::ConRandomUnfinishedMap(IConsole::IResult *pResult, void *pUserData)
-{
-	CGameContext *pSelf = (CGameContext *)pUserData;
+// void CGameContext::ConRandomUnfinishedMap(IConsole::IResult *pResult, void *pUserData)
+// {
+// 	CGameContext *pSelf = (CGameContext *)pUserData;
 
-	int Stars = pResult->NumArguments() ? pResult->GetInteger(0) : -1;
+// 	int Stars = pResult->NumArguments() ? pResult->GetInteger(0) : -1;
 
-	pSelf->m_pScore->RandomUnfinishedMap(pSelf->m_VoteCreator, Stars);
-}
+// 	pSelf->m_pScore->RandomUnfinishedMap(pSelf->m_VoteCreator, Stars);
+// }
 
 void CGameContext::ConRestart(IConsole::IResult *pResult, void *pUserData)
 {
@@ -3073,8 +3087,8 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("switch_open", "i[switch]", CFGFLAG_SERVER | CFGFLAG_GAME, ConSwitchOpen, this, "Whether a switch is deactivated by default (otherwise activated)");
 	Console()->Register("pause_game", "", CFGFLAG_SERVER, ConPause, this, "Pause/unpause game");
 	Console()->Register("change_map", "?r[map]", CFGFLAG_SERVER | CFGFLAG_STORE, ConChangeMap, this, "Change map");
-	Console()->Register("random_map", "?i[stars]", CFGFLAG_SERVER, ConRandomMap, this, "Random map");
-	Console()->Register("random_unfinished_map", "?i[stars]", CFGFLAG_SERVER, ConRandomUnfinishedMap, this, "Random unfinished map");
+	// Console()->Register("random_map", "?i[stars]", CFGFLAG_SERVER, ConRandomMap, this, "Random map");
+	// Console()->Register("random_unfinished_map", "?i[stars]", CFGFLAG_SERVER, ConRandomUnfinishedMap, this, "Random unfinished map");
 	Console()->Register("restart", "?i[seconds]", CFGFLAG_SERVER | CFGFLAG_STORE, ConRestart, this, "Restart in x seconds (0 = abort)");
 	Console()->Register("broadcast", "r[message]", CFGFLAG_SERVER, ConBroadcast, this, "Broadcast message");
 	Console()->Register("say", "r[message]", CFGFLAG_SERVER, ConSay, this, "Say in chat");
@@ -3645,6 +3659,10 @@ void CGameContext::OnSnap(int ClientID)
 			(Server()->ClientAuthed(ClientID) ?
 					PLAYERFLAG_SCOREBOARD :
 					(PLAYERFLAG_CHATTING | PLAYERFLAG_SCOREBOARD));
+
+	// high capacity mode, don't send real
+	if(m_MaxClientID > FAKE_MAX_CLIENTS)
+		SendReal = false;
 
 	if(SendReal == m_aLastSendReal[ClientID] && ReadyForFakeSnap)
 	{

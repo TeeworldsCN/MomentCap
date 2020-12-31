@@ -1314,15 +1314,20 @@ int CCharacter::NetworkClipped(int SnappingClient)
 
 int CCharacter::NetworkClipped(int SnappingClient, vec2 CheckPos)
 {
-	if(SnappingClient == -1 || GameServer()->m_apPlayers[SnappingClient]->m_ShowAll)
+	if(SnappingClient == -1)
 		return 0;
 
+	// high capacity mode don't send zoomed
+	vec2 MaxD = GameServer()->m_apPlayers[SnappingClient]->m_ShowDistance;
+	if(GameServer()->m_MaxClientID > FAKE_MAX_CLIENTS)
+		MaxD = vec2(1000, 800);
+
 	float dx = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.x - CheckPos.x;
-	if(absolute(dx) > GameServer()->m_apPlayers[SnappingClient]->m_ShowDistance.x)
+	if(absolute(dx) > MaxD.x)
 		return 1;
 
 	float dy = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.y - CheckPos.y;
-	if(absolute(dy) > GameServer()->m_apPlayers[SnappingClient]->m_ShowDistance.y)
+	if(absolute(dy) > MaxD.y)
 		return 1;
 
 	return 0;
@@ -1367,8 +1372,8 @@ void CCharacter::FillAntibot(CAntibotCharacterData *pData)
 
 void CCharacter::HandleBroadcast()
 {
-	CPlayerData *pData = GameServer()->Score()->PlayerData(m_pPlayer->GetCID());
-
+	// CPlayerData *pData = GameServer()->Score()->PlayerData(m_pPlayer->GetCID());
+	/*
 	if(m_DDRaceState == DDRACE_STARTED && m_CpLastBroadcast != m_CpActive &&
 		m_CpActive > -1 && m_CpTick > Server()->Tick() && m_pPlayer->GetClientVersion() == VERSION_VANILLA &&
 		pData->m_BestTime && pData->m_aBestCpTime[m_CpActive] != 0)
@@ -1380,7 +1385,8 @@ void CCharacter::HandleBroadcast()
 		m_CpLastBroadcast = m_CpActive;
 		m_LastBroadcast = Server()->Tick();
 	}
-	else if((m_pPlayer->m_TimerType == CPlayer::TIMERTYPE_BROADCAST || m_pPlayer->m_TimerType == CPlayer::TIMERTYPE_GAMETIMER_AND_BROADCAST) && m_DDRaceState == DDRACE_STARTED && m_LastBroadcast + Server()->TickSpeed() * g_Config.m_SvTimeInBroadcastInterval <= Server()->Tick())
+	else */
+	if((m_pPlayer->m_TimerType == CPlayer::TIMERTYPE_BROADCAST || m_pPlayer->m_TimerType == CPlayer::TIMERTYPE_GAMETIMER_AND_BROADCAST) && m_DDRaceState == DDRACE_STARTED && m_LastBroadcast + Server()->TickSpeed() * g_Config.m_SvTimeInBroadcastInterval <= Server()->Tick())
 	{
 		char aBuf[32];
 		int Time = (int64)100 * ((float)(Server()->Tick() - m_StartTime) / ((float)Server()->TickSpeed()));
@@ -1511,6 +1517,8 @@ void CCharacter::HandleTiles(int Index)
 		m_LastBonus = false;
 		return;
 	}
+
+	/*
 	int cp = GameServer()->Collision()->IsCheckpoint(MapIndex);
 	if(cp != -1 && m_DDRaceState == DDRACE_STARTED && cp > m_CpActive)
 	{
@@ -1563,6 +1571,8 @@ void CCharacter::HandleTiles(int Index)
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_pPlayer->GetCID());
 		}
 	}
+	*/
+
 	int tcp = GameServer()->Collision()->IsTCheckpoint(MapIndex);
 	if(tcp)
 		m_TeleCheckpoint = tcp;
@@ -1570,6 +1580,7 @@ void CCharacter::HandleTiles(int Index)
 	// start
 	if(((m_TileIndex == TILE_START) || (m_TileFIndex == TILE_START) || FTile1 == TILE_START || FTile2 == TILE_START || FTile3 == TILE_START || FTile4 == TILE_START || Tile1 == TILE_START || Tile2 == TILE_START || Tile3 == TILE_START || Tile4 == TILE_START) && (m_DDRaceState == DDRACE_NONE || m_DDRaceState == DDRACE_FINISHED || (m_DDRaceState == DDRACE_STARTED && !Team() && g_Config.m_SvTeam != 3)))
 	{
+		/*
 		if(Teams()->GetSaving(Team()))
 		{
 			if(m_LastStartWarning < Server()->Tick() - 3 * Server()->TickSpeed())
@@ -1580,6 +1591,7 @@ void CCharacter::HandleTiles(int Index)
 			Die(GetPlayer()->GetCID(), WEAPON_WORLD);
 			return;
 		}
+		*/
 		if(g_Config.m_SvTeam == 2 && (Team() == TEAM_FLOCK || Teams()->Count(Team()) <= 1))
 		{
 			if(m_LastStartWarning < Server()->Tick() - 3 * Server()->TickSpeed())

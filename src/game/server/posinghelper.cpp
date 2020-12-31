@@ -173,15 +173,17 @@ int CPoseCharacter::NetworkClipped(int SnappingClient)
 
 int CPoseCharacter::NetworkClipped(int SnappingClient, vec2 CheckPos)
 {
-	if(SnappingClient == -1 || GameServer()->m_apPlayers[SnappingClient]->m_ShowAll)
+	if(SnappingClient == -1)
 		return 0;
 
+	// pose should be nearby only
+
 	float dx = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.x - CheckPos.x;
-	if(absolute(dx) > GameServer()->m_apPlayers[SnappingClient]->m_ShowDistance.x)
+	if(absolute(dx) > 1000)
 		return 1;
 
 	float dy = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.y - CheckPos.y;
-	if(absolute(dy) > GameServer()->m_apPlayers[SnappingClient]->m_ShowDistance.y)
+	if(absolute(dy) > 800)
 		return 1;
 
 	return 0;

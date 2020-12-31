@@ -160,8 +160,11 @@ void CPlayer::Reset()
 
 	GameServer()->Score()->PlayerData(m_ClientID)->Reset();
 
-	m_ShowOthers = g_Config.m_SvShowOthersDefault;
-	m_ShowAll = g_Config.m_SvShowAllDefault;
+	m_ShowOthers = true; // g_Config.m_SvShowOthersDefault;
+
+	// HACK: safe no show all
+	m_ShowAll = false; // g_Config.m_SvShowAllDefault;
+
 	m_ShowDistance = vec2(1000, 800);
 	m_SpecTeam = 0;
 	m_NinjaJetpack = false;

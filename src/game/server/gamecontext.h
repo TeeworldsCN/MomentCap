@@ -292,6 +292,7 @@ public:
 	std::shared_ptr<CScoreRandomMapResult> m_SqlRandomMapResult;
 
 	int m_NumPlayers;
+	int m_MaxClientID;
 	int m_NumCaptures;
 
 private:
