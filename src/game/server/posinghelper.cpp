@@ -7,8 +7,8 @@ bool CPoseCharacter::s_SnapCached[MAX_CLIENTS];
 int CPoseCharacter::s_FakeEntityIDs[FAKE_MAX_CLIENTS];
 SPoseSnapCache CPoseCharacter::s_SnapCache[MAX_CLIENTS][FAKE_MAX_CLIENTS];
 
-uint8_t CPoseCharacter::s_FakeClientIDs[MAX_CLIENTS][FAKE_MAX_CLIENTS];
-uint8_t CPoseCharacter::s_LastSnapID = 0;
+uint32_t CPoseCharacter::s_FakeClientIDs[MAX_CLIENTS][FAKE_MAX_CLIENTS];
+uint32_t CPoseCharacter::s_LastSnapID = 0;
 
 CGameWorld *CPoseCharacter::s_pGameWorld = NULL;
 std::unordered_map<std::string, CPoseCharacter> CPoseCharacter::s_PoseMap;
@@ -206,14 +206,18 @@ bool CPoseCharacter::Pose(CPlayer *pPlayer)
 
 int CPoseCharacter::FindIDFor(int SnappingClient)
 {
+	int Result = -1;
+	uint32_t SmallestSnapID = UINT32_MAX;
 	for(int i = 1; i < FAKE_MAX_CLIENTS; ++i)
 	{
-		if(s_FakeClientIDs[SnappingClient][i] < s_LastSnapID - 2)
+		// find oldest one
+		if(s_FakeClientIDs[SnappingClient][i] < SmallestSnapID)
 		{
-			return i;
+			SmallestSnapID = s_FakeClientIDs[SnappingClient][i];
+			Result = i;
 		}
 	}
-	return -1;
+	return Result;
 }
 
 bool CPoseCharacter::IsCurrent(int SnappingClient, int FakeID)
@@ -462,7 +466,7 @@ void CPoseCharacter::Snap(int SnappingClient)
 	pCache->m_ClientInfo = m_ClientInfo;
 
 	pCache->m_PlayerInfo.m_Latency = 999;
-	pCache->m_PlayerInfo.m_Score = -6039;
+	pCache->m_PlayerInfo.m_Score = -1221; // 2021
 	pCache->m_PlayerInfo.m_Local = 0;
 	pCache->m_PlayerInfo.m_ClientID = ID;
 	pCache->m_PlayerInfo.m_Team = 0;
