@@ -18,7 +18,8 @@ void CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
 {
 	if(!Server()->IsSixup(SnappingClient))
 	{
-		if(NewSnap || !s_SnapCached[SnappingClient])
+		bool NeedSnap = NewSnap || !s_SnapCached[SnappingClient];
+		if(NeedSnap)
 		{
 			for(auto &Cache : s_SnapCache[SnappingClient])
 				Cache.m_Exists = false;
@@ -76,7 +77,10 @@ void CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
 				*pDDNetPlayer = pCache->m_DDNetPlayer;
 			}
 
-			s_FakeClientIDs[SnappingClient][i] = s_LastSnapID + 1;
+			if(!NeedSnap)
+			{
+				s_FakeClientIDs[SnappingClient][i] = s_LastSnapID + 1;
+			}
 		}
 	}
 }
@@ -204,7 +208,7 @@ int CPoseCharacter::FindIDFor(int SnappingClient)
 {
 	for(int i = 1; i < FAKE_MAX_CLIENTS; ++i)
 	{
-		if(s_FakeClientIDs[SnappingClient][i] < s_LastSnapID - 1)
+		if(s_FakeClientIDs[SnappingClient][i] < s_LastSnapID - 2)
 		{
 			return i;
 		}
@@ -401,7 +405,7 @@ void CPoseCharacter::Snap(int SnappingClient)
 	bool IsOld = Info.m_DDNetVersion < VERSION_DDNET_OLD;
 
 	int ID = m_ClientPoseMap[SnappingClient];
-	if(!IsCurrent(SnappingClient, ID))
+	if(!IsCurrent(SnappingClient, ID) || s_SnapCache[SnappingClient][ID].m_Exists)
 		ID = FindIDFor(SnappingClient);
 
 	if(ID <= 0 || (IsOld && ID >= VANILLA_MAX_CLIENTS) || ID >= FAKE_MAX_CLIENTS)
@@ -465,5 +469,6 @@ void CPoseCharacter::Snap(int SnappingClient)
 
 	pCache->m_Exists = true;
 
+	s_FakeClientIDs[SnappingClient][ID] = s_LastSnapID + 1;
 	m_ClientPoseMap[SnappingClient] = ID;
 }
