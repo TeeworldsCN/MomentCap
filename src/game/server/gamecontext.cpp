@@ -1176,12 +1176,14 @@ void CGameContext::OnClientEnter(int ClientID)
 	//world.insert_entity(&players[client_id]);
 	m_apPlayers[ClientID]->Respawn();
 	// init the player
-	Score()->PlayerData(ClientID)->Reset();
-	m_apPlayers[ClientID]->m_Score = Score()->PlayerData(ClientID)->m_BestTime ? Score()->PlayerData(ClientID)->m_BestTime : -9999;
+	// Score()->PlayerData(ClientID)->Reset();
+	m_apPlayers[ClientID]->m_Score = -9999;
+
+	// Score()->PlayerData(ClientID)->m_BestTime ? Score()->PlayerData(ClientID)->m_BestTime : -9999;
 
 	// Can't set score here as LoadScore() is threaded, run it in
 	// LoadScoreThreaded() instead
-	Score()->LoadPlayerData(ClientID);
+	// Score()->LoadPlayerData(ClientID);
 
 	if(Server()->IsSixup(ClientID))
 	{
@@ -2244,9 +2246,9 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				SendChat(-1, CGameContext::CHAT_ALL, aChatText);
 
 				// reload scores
-				Score()->PlayerData(ClientID)->Reset();
+				// Score()->PlayerData(ClientID)->Reset();
 				m_apPlayers[ClientID]->m_Score = -9999;
-				Score()->LoadPlayerData(ClientID);
+				// Score()->LoadPlayerData(ClientID);
 
 				SixupNeedsUpdate = true;
 			}
@@ -3661,7 +3663,7 @@ void CGameContext::OnSnap(int ClientID)
 					(PLAYERFLAG_CHATTING | PLAYERFLAG_SCOREBOARD));
 
 	// high capacity mode, don't send real
-	if(m_MaxClientID > FAKE_MAX_CLIENTS)
+	if(m_MaxClientID >= FAKE_MAX_CLIENTS)
 		SendReal = false;
 
 	if(SendReal == m_aLastSendReal[ClientID] && ReadyForFakeSnap)
@@ -3828,10 +3830,10 @@ void CGameContext::OnSetAuthed(int ClientID, int Level)
 
 void CGameContext::SendRecord(int ClientID)
 {
-	CNetMsg_Sv_Record RecordsMsg;
-	RecordsMsg.m_PlayerTimeBest = Score()->PlayerData(ClientID)->m_BestTime * 100.0f;
-	RecordsMsg.m_ServerTimeBest = m_pController->m_CurrentRecord * 100.0f; //TODO: finish this
-	Server()->SendPackMsg(&RecordsMsg, MSGFLAG_VITAL, ClientID);
+	// CNetMsg_Sv_Record RecordsMsg;
+	// RecordsMsg.m_PlayerTimeBest = Score()->PlayerData(ClientID)->m_BestTime * 100.0f;
+	// RecordsMsg.m_ServerTimeBest = m_pController->m_CurrentRecord * 100.0f; //TODO: finish this
+	// Server()->SendPackMsg(&RecordsMsg, MSGFLAG_VITAL, ClientID);
 }
 
 int CGameContext::ProcessSpamProtection(int ClientID)

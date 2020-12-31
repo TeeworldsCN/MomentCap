@@ -544,12 +544,13 @@ void CGameTeams::OnTeamFinish(CPlayer **Players, unsigned int Size, float Time, 
 		}
 	}
 
-	if(Size >= 2)
-		GameServer()->Score()->SaveTeamScore(PlayerCIDs, Size, Time, pTimestamp);
+	// if(Size >= 2)
+	// 	GameServer()->Score()->SaveTeamScore(PlayerCIDs, Size, Time, pTimestamp);
 }
 
 void CGameTeams::OnFinish(CPlayer *Player, float Time, const char *pTimestamp)
 {
+	/*
 	if(!Player || !Player->IsPlaying())
 		return;
 	//TODO:DDRace:btd: this ugly
@@ -621,10 +622,10 @@ void CGameTeams::OnFinish(CPlayer *Player, float Time, const char *pTimestamp)
 		CallSaveScore = true;
 	}
 
-	if(CallSaveScore)
-		if(g_Config.m_SvNamelessScore || !str_startswith(Server()->ClientName(ClientID), "nameless tee"))
-			GameServer()->Score()->SaveScore(ClientID, Time, pTimestamp,
-				GetCpCurrent(Player), Player->m_NotEligibleForFinish);
+	// if(CallSaveScore)
+	// 	if(g_Config.m_SvNamelessScore || !str_startswith(Server()->ClientName(ClientID), "nameless tee"))
+	// 		GameServer()->Score()->SaveScore(ClientID, Time, pTimestamp,
+	// 			GetCpCurrent(Player), Player->m_NotEligibleForFinish);
 
 	bool NeedToSendNewRecord = false;
 	// update server best time
@@ -690,10 +691,12 @@ void CGameTeams::OnFinish(CPlayer *Player, float Time, const char *pTimestamp)
 		Player->m_Score = TTime;
 		Player->m_HasFinishScore = true;
 	}
+	*/
 }
 
 void CGameTeams::ProcessSaveTeam()
 {
+	/*
 	for(int Team = 0; Team < MAX_CLIENTS; Team++)
 	{
 		if(m_pSaveTeamResult[Team] == nullptr || !m_pSaveTeamResult[Team]->m_Completed)
@@ -756,6 +759,7 @@ void CGameTeams::ProcessSaveTeam()
 		}
 		m_pSaveTeamResult[Team] = nullptr;
 	}
+	*/
 }
 
 void CGameTeams::OnCharacterSpawn(int ClientID)

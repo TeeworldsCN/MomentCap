@@ -204,7 +204,7 @@ bool CScore::Init(IDbConnection *pSqlServer, const ISqlData *pGameData)
 
 void CScore::LoadPlayerData(int ClientID)
 {
-	ExecPlayerThread(LoadPlayerDataThread, "load player data", ClientID, "", 0);
+	// ExecPlayerThread(LoadPlayerDataThread, "load player data", ClientID, "", 0);
 }
 
 // update stuff
@@ -271,9 +271,9 @@ bool CScore::LoadPlayerDataThread(IDbConnection *pSqlServer, const ISqlData *pGa
 
 void CScore::MapVote(int ClientID, const char *MapName)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	ExecPlayerThread(MapVoteThread, "map vote", ClientID, MapName, 0);
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// ExecPlayerThread(MapVoteThread, "map vote", ClientID, MapName, 0);
 }
 
 bool CScore::MapVoteThread(IDbConnection *pSqlServer, const ISqlData *pGameData)
@@ -331,9 +331,9 @@ bool CScore::MapVoteThread(IDbConnection *pSqlServer, const ISqlData *pGameData)
 
 void CScore::MapInfo(int ClientID, const char *MapName)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	ExecPlayerThread(MapInfoThread, "map info", ClientID, MapName, 0);
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// ExecPlayerThread(MapInfoThread, "map info", ClientID, MapName, 0);
 }
 
 bool CScore::MapInfoThread(IDbConnection *pSqlServer, const ISqlData *pGameData)
@@ -544,24 +544,24 @@ bool CScore::SaveScoreThread(IDbConnection *pSqlServer, const ISqlData *pGameDat
 
 void CScore::SaveTeamScore(int *aClientIDs, unsigned int Size, float Time, const char *pTimestamp)
 {
-	CConsole *pCon = (CConsole *)GameServer()->Console();
-	if(pCon->m_Cheated)
-		return;
-	for(unsigned int i = 0; i < Size; i++)
-	{
-		if(GameServer()->m_apPlayers[aClientIDs[i]]->m_NotEligibleForFinish)
-			return;
-	}
-	auto Tmp = std::unique_ptr<CSqlTeamScoreData>(new CSqlTeamScoreData());
-	for(unsigned int i = 0; i < Size; i++)
-		str_copy(Tmp->m_aNames[i], Server()->ClientName(aClientIDs[i]), sizeof(Tmp->m_aNames[i]));
-	Tmp->m_Size = Size;
-	Tmp->m_Time = Time;
-	str_copy(Tmp->m_aTimestamp, pTimestamp, sizeof(Tmp->m_aTimestamp));
-	FormatUuid(GameServer()->GameUuid(), Tmp->m_GameUuid, sizeof(Tmp->m_GameUuid));
-	str_copy(Tmp->m_Map, g_Config.m_SvMap, sizeof(Tmp->m_Map));
+	// CConsole *pCon = (CConsole *)GameServer()->Console();
+	// if(pCon->m_Cheated)
+	// 	return;
+	// for(unsigned int i = 0; i < Size; i++)
+	// {
+	// 	if(GameServer()->m_apPlayers[aClientIDs[i]]->m_NotEligibleForFinish)
+	// 		return;
+	// }
+	// auto Tmp = std::unique_ptr<CSqlTeamScoreData>(new CSqlTeamScoreData());
+	// for(unsigned int i = 0; i < Size; i++)
+	// 	str_copy(Tmp->m_aNames[i], Server()->ClientName(aClientIDs[i]), sizeof(Tmp->m_aNames[i]));
+	// Tmp->m_Size = Size;
+	// Tmp->m_Time = Time;
+	// str_copy(Tmp->m_aTimestamp, pTimestamp, sizeof(Tmp->m_aTimestamp));
+	// FormatUuid(GameServer()->GameUuid(), Tmp->m_GameUuid, sizeof(Tmp->m_GameUuid));
+	// str_copy(Tmp->m_Map, g_Config.m_SvMap, sizeof(Tmp->m_Map));
 
-	m_pPool->ExecuteWrite(SaveTeamScoreThread, std::move(Tmp), "save team score");
+	// m_pPool->ExecuteWrite(SaveTeamScoreThread, std::move(Tmp), "save team score");
 }
 
 bool CScore::SaveTeamScoreThread(IDbConnection *pSqlServer, const ISqlData *pGameData, bool Failure)
@@ -648,9 +648,9 @@ bool CScore::SaveTeamScoreThread(IDbConnection *pSqlServer, const ISqlData *pGam
 
 void CScore::ShowRank(int ClientID, const char *pName)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	ExecPlayerThread(ShowRankThread, "show rank", ClientID, pName, 0);
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// ExecPlayerThread(ShowRankThread, "show rank", ClientID, pName, 0);
 }
 
 bool CScore::ShowRankThread(IDbConnection *pSqlServer, const ISqlData *pGameData)
@@ -706,9 +706,9 @@ bool CScore::ShowRankThread(IDbConnection *pSqlServer, const ISqlData *pGameData
 
 void CScore::ShowTeamRank(int ClientID, const char *pName)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	ExecPlayerThread(ShowTeamRankThread, "show team rank", ClientID, pName, 0);
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// ExecPlayerThread(ShowTeamRankThread, "show team rank", ClientID, pName, 0);
 }
 
 bool CScore::ShowTeamRankThread(IDbConnection *pSqlServer, const ISqlData *pGameData)
@@ -783,9 +783,9 @@ bool CScore::ShowTeamRankThread(IDbConnection *pSqlServer, const ISqlData *pGame
 
 void CScore::ShowTop5(int ClientID, int Offset)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	ExecPlayerThread(ShowTop5Thread, "show top5", ClientID, "", Offset);
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// ExecPlayerThread(ShowTop5Thread, "show top5", ClientID, "", Offset);
 }
 
 bool CScore::ShowTop5Thread(IDbConnection *pSqlServer, const ISqlData *pGameData)
@@ -837,9 +837,9 @@ bool CScore::ShowTop5Thread(IDbConnection *pSqlServer, const ISqlData *pGameData
 
 void CScore::ShowTeamTop5(int ClientID, int Offset)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	ExecPlayerThread(ShowTeamTop5Thread, "show team top5", ClientID, "", Offset);
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// ExecPlayerThread(ShowTeamTop5Thread, "show team top5", ClientID, "", Offset);
 }
 
 bool CScore::ShowTeamTop5Thread(IDbConnection *pSqlServer, const ISqlData *pGameData)
@@ -920,9 +920,9 @@ bool CScore::ShowTeamTop5Thread(IDbConnection *pSqlServer, const ISqlData *pGame
 
 void CScore::ShowTeamTop5(int ClientID, const char *pName, int Offset)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	ExecPlayerThread(ShowPlayerTeamTop5Thread, "show team top5 player", ClientID, pName, Offset);
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// ExecPlayerThread(ShowPlayerTeamTop5Thread, "show team top5 player", ClientID, pName, Offset);
 }
 
 bool CScore::ShowPlayerTeamTop5Thread(IDbConnection *pSqlServer, const ISqlData *pGameData)
@@ -1007,16 +1007,16 @@ bool CScore::ShowPlayerTeamTop5Thread(IDbConnection *pSqlServer, const ISqlData 
 
 void CScore::ShowTimes(int ClientID, int Offset)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	ExecPlayerThread(ShowTimesThread, "show times", ClientID, "", Offset);
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// ExecPlayerThread(ShowTimesThread, "show times", ClientID, "", Offset);
 }
 
 void CScore::ShowTimes(int ClientID, const char *pName, int Offset)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	ExecPlayerThread(ShowTimesThread, "show times", ClientID, pName, Offset);
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// ExecPlayerThread(ShowTimesThread, "show times", ClientID, pName, Offset);
 }
 
 bool CScore::ShowTimesThread(IDbConnection *pSqlServer, const ISqlData *pGameData)
@@ -1116,9 +1116,9 @@ bool CScore::ShowTimesThread(IDbConnection *pSqlServer, const ISqlData *pGameDat
 
 void CScore::ShowPoints(int ClientID, const char *pName)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	ExecPlayerThread(ShowPointsThread, "show points", ClientID, pName, 0);
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// ExecPlayerThread(ShowPointsThread, "show points", ClientID, pName, 0);
 }
 
 bool CScore::ShowPointsThread(IDbConnection *pSqlServer, const ISqlData *pGameData)
@@ -1160,9 +1160,9 @@ bool CScore::ShowPointsThread(IDbConnection *pSqlServer, const ISqlData *pGameDa
 
 void CScore::ShowTopPoints(int ClientID, int Offset)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	ExecPlayerThread(ShowTopPointsThread, "show top points", ClientID, "", Offset);
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// ExecPlayerThread(ShowTopPointsThread, "show top points", ClientID, "", Offset);
 }
 
 bool CScore::ShowTopPointsThread(IDbConnection *pSqlServer, const ISqlData *pGameData)
@@ -1461,42 +1461,42 @@ bool CScore::SaveTeamThread(IDbConnection *pSqlServer, const ISqlData *pGameData
 
 void CScore::LoadTeam(const char *Code, int ClientID)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	auto *pController = ((CGameControllerDDRace *)(GameServer()->m_pController));
-	int Team = pController->m_Teams.m_Core.Team(ClientID);
-	if(pController->m_Teams.GetSaving(Team))
-		return;
-	if(Team < TEAM_FLOCK || Team >= MAX_CLIENTS || (g_Config.m_SvTeam != 3 && Team == TEAM_FLOCK))
-	{
-		GameServer()->SendChatTarget(ClientID, "You have to be in a team (from 1-63)");
-		return;
-	}
-	if(pController->m_Teams.GetTeamState(Team) != CGameTeams::TEAMSTATE_OPEN)
-	{
-		GameServer()->SendChatTarget(ClientID, "Team can't be loaded while racing");
-		return;
-	}
-	auto SaveResult = std::make_shared<CScoreSaveResult>(ClientID, pController);
-	SaveResult->m_Status = CScoreSaveResult::LOAD_FAILED;
-	pController->m_Teams.SetSaving(Team, SaveResult);
-	auto Tmp = std::unique_ptr<CSqlTeamLoad>(new CSqlTeamLoad(SaveResult));
-	str_copy(Tmp->m_Code, Code, sizeof(Tmp->m_Code));
-	str_copy(Tmp->m_Map, g_Config.m_SvMap, sizeof(Tmp->m_Map));
-	Tmp->m_ClientID = ClientID;
-	str_copy(Tmp->m_RequestingPlayer, Server()->ClientName(ClientID), sizeof(Tmp->m_RequestingPlayer));
-	Tmp->m_NumPlayer = 0;
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
-		if(pController->m_Teams.m_Core.Team(i) == Team)
-		{
-			// put all names at the beginning of the array
-			str_copy(Tmp->m_aClientNames[Tmp->m_NumPlayer], Server()->ClientName(i), sizeof(Tmp->m_aClientNames[Tmp->m_NumPlayer]));
-			Tmp->m_aClientID[Tmp->m_NumPlayer] = i;
-			Tmp->m_NumPlayer++;
-		}
-	}
-	m_pPool->ExecuteWrite(LoadTeamThread, std::move(Tmp), "load team");
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// auto *pController = ((CGameControllerDDRace *)(GameServer()->m_pController));
+	// int Team = pController->m_Teams.m_Core.Team(ClientID);
+	// if(pController->m_Teams.GetSaving(Team))
+	// 	return;
+	// if(Team < TEAM_FLOCK || Team >= MAX_CLIENTS || (g_Config.m_SvTeam != 3 && Team == TEAM_FLOCK))
+	// {
+	// 	GameServer()->SendChatTarget(ClientID, "You have to be in a team (from 1-63)");
+	// 	return;
+	// }
+	// if(pController->m_Teams.GetTeamState(Team) != CGameTeams::TEAMSTATE_OPEN)
+	// {
+	// 	GameServer()->SendChatTarget(ClientID, "Team can't be loaded while racing");
+	// 	return;
+	// }
+	// auto SaveResult = std::make_shared<CScoreSaveResult>(ClientID, pController);
+	// SaveResult->m_Status = CScoreSaveResult::LOAD_FAILED;
+	// pController->m_Teams.SetSaving(Team, SaveResult);
+	// auto Tmp = std::unique_ptr<CSqlTeamLoad>(new CSqlTeamLoad(SaveResult));
+	// str_copy(Tmp->m_Code, Code, sizeof(Tmp->m_Code));
+	// str_copy(Tmp->m_Map, g_Config.m_SvMap, sizeof(Tmp->m_Map));
+	// Tmp->m_ClientID = ClientID;
+	// str_copy(Tmp->m_RequestingPlayer, Server()->ClientName(ClientID), sizeof(Tmp->m_RequestingPlayer));
+	// Tmp->m_NumPlayer = 0;
+	// for(int i = 0; i < MAX_CLIENTS; i++)
+	// {
+	// 	if(pController->m_Teams.m_Core.Team(i) == Team)
+	// 	{
+	// 		// put all names at the beginning of the array
+	// 		str_copy(Tmp->m_aClientNames[Tmp->m_NumPlayer], Server()->ClientName(i), sizeof(Tmp->m_aClientNames[Tmp->m_NumPlayer]));
+	// 		Tmp->m_aClientID[Tmp->m_NumPlayer] = i;
+	// 		Tmp->m_NumPlayer++;
+	// 	}
+	// }
+	// m_pPool->ExecuteWrite(LoadTeamThread, std::move(Tmp), "load team");
 }
 
 bool CScore::LoadTeamThread(IDbConnection *pSqlServer, const ISqlData *pGameData, bool Failure)
@@ -1599,9 +1599,9 @@ end:
 
 void CScore::GetSaves(int ClientID)
 {
-	if(RateLimitPlayer(ClientID))
-		return;
-	ExecPlayerThread(GetSavesThread, "get saves", ClientID, "", 0);
+	// if(RateLimitPlayer(ClientID))
+	// 	return;
+	// ExecPlayerThread(GetSavesThread, "get saves", ClientID, "", 0);
 }
 
 bool CScore::GetSavesThread(IDbConnection *pSqlServer, const ISqlData *pGameData)

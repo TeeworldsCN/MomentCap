@@ -158,7 +158,7 @@ void CPlayer::Reset()
 	}
 	m_DefEmoteReset = -1;
 
-	GameServer()->Score()->PlayerData(m_ClientID)->Reset();
+	// GameServer()->Score()->PlayerData(m_ClientID)->Reset();
 
 	m_ShowOthers = true; // g_Config.m_SvShowOthersDefault;
 
@@ -226,19 +226,19 @@ void CPlayer::Tick()
 #ifdef CONF_DEBUG
 	if(!g_Config.m_DbgDummies || m_ClientID < MAX_CLIENTS - g_Config.m_DbgDummies)
 #endif
-		if(m_ScoreQueryResult != nullptr && m_ScoreQueryResult->m_Completed)
-		{
-			ProcessScoreResult(*m_ScoreQueryResult);
-			m_ScoreQueryResult = nullptr;
-		}
-	if(m_ScoreFinishResult != nullptr && m_ScoreFinishResult->m_Completed)
-	{
-		ProcessScoreResult(*m_ScoreFinishResult);
-		m_ScoreFinishResult = nullptr;
-	}
+		// 	if(m_ScoreQueryResult != nullptr && m_ScoreQueryResult->m_Completed)
+		// 	{
+		// 		ProcessScoreResult(*m_ScoreQueryResult);
+		// 		m_ScoreQueryResult = nullptr;
+		// 	}
+		// if(m_ScoreFinishResult != nullptr && m_ScoreFinishResult->m_Completed)
+		// {
+		// 	ProcessScoreResult(*m_ScoreFinishResult);
+		// 	m_ScoreFinishResult = nullptr;
+		// }
 
-	if(!Server()->ClientIngame(m_ClientID))
-		return;
+		if(!Server()->ClientIngame(m_ClientID))
+			return;
 
 	if(m_ChatScore > 0)
 		m_ChatScore--;
@@ -1132,6 +1132,7 @@ void CPlayer::SpectatePlayerName(const char *pName)
 
 void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 {
+	/*
 	if(Result.m_Success) // SQL request was successful
 	{
 		switch(Result.m_MessageKind)
@@ -1172,8 +1173,8 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 			GameServer()->CallVote(m_ClientID, Result.m_Data.m_MapVote.m_Map, aCmd, "/map", aChatmsg);
 			break;
 		case CScorePlayerResult::PLAYER_INFO:
-			GameServer()->Score()->PlayerData(m_ClientID)->Set(Result.m_Data.m_Info.m_Time, Result.m_Data.m_Info.m_CpTime);
-			m_Score = Result.m_Data.m_Info.m_Score;
+			// GameServer()->Score()->PlayerData(m_ClientID)->Set(Result.m_Data.m_Info.m_Time, Result.m_Data.m_Info.m_CpTime);
+			m_Score = -9999; // Result.m_Data.m_Info.m_Score;
 			m_HasFinishScore = Result.m_Data.m_Info.m_HasFinishScore;
 			// -9999 stands for no time and isn't displayed in scoreboard, so
 			// shift the time by a second if the player actually took 9999
@@ -1197,4 +1198,5 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 			break;
 		}
 	}
+	*/
 }

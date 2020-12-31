@@ -1802,7 +1802,8 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 
 	// count the players
 	int PlayerCount = 0, ClientCount = 0;
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	// leave one open
+	for(int i = 0; i < FAKE_MAX_CLIENTS - 1; i++)
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
 		{
@@ -1855,6 +1856,9 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 	ADD_INT(p, g_Config.m_Password[0] ? SERVER_FLAG_PASSWORD : 0);
 
 	int MaxClients = m_NetServer.MaxClients();
+	if(MaxClients > FAKE_MAX_CLIENTS)
+		MaxClients = FAKE_MAX_CLIENTS;
+
 	if(Type == SERVERINFO_VANILLA || Type == SERVERINFO_INGAME)
 	{
 		if(ClientCount >= VANILLA_MAX_CLIENTS)
@@ -1931,7 +1935,7 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 	// For legacy 64p, send 24 players per packet.
 	// For extended, send as much players as possible.
 
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int i = 0; i < FAKE_MAX_CLIENTS; i++)
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
 		{
@@ -1996,7 +2000,7 @@ void CServer::CacheServerInfoSixup(CCache *pCache, bool SendClients)
 	// Could be moved to a separate function and cached
 	// count the players
 	int PlayerCount = 0, ClientCount = 0;
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int i = 0; i < FAKE_MAX_CLIENTS - 1; i++)
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
 		{
@@ -2024,6 +2028,9 @@ void CServer::CacheServerInfoSixup(CCache *pCache, bool SendClients)
 	Packer.AddInt(Flags);
 
 	int MaxClients = m_NetServer.MaxClients();
+	if(MaxClients > FAKE_MAX_CLIENTS)
+		MaxClients = FAKE_MAX_CLIENTS;
+
 	Packer.AddInt(g_Config.m_SvSkillLevel); // server skill level
 	Packer.AddInt(PlayerCount); // num players
 	Packer.AddInt(maximum(MaxClients - maximum(g_Config.m_SvSpectatorSlots, g_Config.m_SvReservedSlots), PlayerCount)); // max players
@@ -2032,7 +2039,7 @@ void CServer::CacheServerInfoSixup(CCache *pCache, bool SendClients)
 
 	if(SendClients)
 	{
-		for(int i = 0; i < MAX_CLIENTS; i++)
+		for(int i = 0; i < FAKE_MAX_CLIENTS; i++)
 		{
 			if(m_aClients[i].m_State != CClient::STATE_EMPTY)
 			{
@@ -2136,7 +2143,7 @@ void CServer::UpdateServerInfo(bool Resend)
 
 	if(Resend)
 	{
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		for(int i = 0; i < FAKE_MAX_CLIENTS; ++i)
 		{
 			if(m_aClients[i].m_State != CClient::STATE_EMPTY)
 			{

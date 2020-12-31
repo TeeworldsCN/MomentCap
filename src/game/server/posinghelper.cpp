@@ -293,7 +293,7 @@ void CPoseCharacter::LoadPoses()
 		return;
 	}
 
-	int NumPoses = 0;
+	size_t NumPoses = 0;
 	io_read(File, &NumPoses, sizeof(size_t));
 
 	for(int i = 0; i < NumPoses; ++i)

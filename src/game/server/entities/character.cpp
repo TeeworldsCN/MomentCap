@@ -1319,7 +1319,7 @@ int CCharacter::NetworkClipped(int SnappingClient, vec2 CheckPos)
 
 	// high capacity mode don't send zoomed
 	vec2 MaxD = GameServer()->m_apPlayers[SnappingClient]->m_ShowDistance;
-	if(GameServer()->m_MaxClientID > FAKE_MAX_CLIENTS)
+	if(GameServer()->m_MaxClientID >= FAKE_MAX_CLIENTS)
 		MaxD = vec2(1000, 800);
 
 	float dx = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.x - CheckPos.x;
