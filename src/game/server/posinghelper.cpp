@@ -24,21 +24,28 @@ void CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
 			for(auto &Cache : s_SnapCache[SnappingClient])
 				Cache.m_Exists = false;
 
-			int Count = 0;
 			for(auto &Pose : s_PoseMap)
 			{
 				Pose.second.Snap(SnappingClient);
 			}
+
+			for(auto &Cache : s_SnapCache[SnappingClient])
+				Cache.m_pID = Cache.m_pExpectedID;
 			s_SnapCached[SnappingClient] = true;
 		}
 
-		for(int i = 0; i < FAKE_MAX_CLIENTS; ++i)
+		IServer::CClientInfo Info;
+		Server()->GetClientInfo(SnappingClient, &Info);
+		bool IsOld = Info.m_DDNetVersion < VERSION_DDNET_OLD;
+		int MaxClientSnaps = IsOld ? VANILLA_MAX_CLIENTS : FAKE_MAX_CLIENTS;
+
+		for(int i = 1; i < FAKE_MAX_CLIENTS; ++i)
 		{
 			auto *pCache = &s_SnapCache[SnappingClient][i];
 			if(!pCache->m_Exists)
 				continue;
 
-			if(AsSpec)
+			if(AsSpec || i >= MaxClientSnaps)
 			{
 				CNetObj_Laser *pLaser = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, s_FakeEntityIDs[i], sizeof(CNetObj_Laser)));
 				if(!pLaser)
@@ -48,38 +55,40 @@ void CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
 			}
 			else
 			{
-				CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, i, sizeof(CNetObj_Character)));
-				if(!pCharacter)
-					continue;
-				*pCharacter = pCache->m_Char;
-				pCharacter->m_Tick = Server()->Tick() - 4;
+				if(!pCache->m_NeedSkip)
+				{
+					CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, i, sizeof(CNetObj_Character)));
+					if(!pCharacter)
+						continue;
+					*pCharacter = pCache->m_Char;
+					pCharacter->m_Tick = Server()->Tick() - 4;
 
-				CNetObj_DDNetCharacter *pDDNetChar = static_cast<CNetObj_DDNetCharacter *>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, i, sizeof(CNetObj_DDNetCharacter)));
-				if(!pDDNetChar)
-					continue;
-				*pDDNetChar = pCache->m_DDNetChar;
+					CNetObj_DDNetCharacter *pDDNetChar = static_cast<CNetObj_DDNetCharacter *>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, i, sizeof(CNetObj_DDNetCharacter)));
+					if(!pDDNetChar)
+						continue;
+					*pDDNetChar = pCache->m_DDNetChar;
 
-				CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, i, sizeof(CNetObj_ClientInfo)));
-				if(!pClientInfo)
-					return;
+					CNetObj_ClientInfo *pClientInfo = static_cast<CNetObj_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, i, sizeof(CNetObj_ClientInfo)));
+					if(!pClientInfo)
+						continue;
 
-				*pClientInfo = pCache->m_ClientInfo;
+					*pClientInfo = pCache->m_ClientInfo;
 
-				CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, i, sizeof(CNetObj_PlayerInfo)));
-				if(!pPlayerInfo)
-					return;
+					CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, i, sizeof(CNetObj_PlayerInfo)));
+					if(!pPlayerInfo)
+						continue;
 
-				*pPlayerInfo = pCache->m_PlayerInfo;
+					*pPlayerInfo = pCache->m_PlayerInfo;
 
-				CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, i, sizeof(CNetObj_DDNetPlayer)));
-				if(!pDDNetPlayer)
-					continue;
-				*pDDNetPlayer = pCache->m_DDNetPlayer;
-			}
+					CNetObj_DDNetPlayer *pDDNetPlayer = static_cast<CNetObj_DDNetPlayer *>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, i, sizeof(CNetObj_DDNetPlayer)));
+					if(!pDDNetPlayer)
+						continue;
+					*pDDNetPlayer = pCache->m_DDNetPlayer;
+				} else {
+					pCache->m_NeedSkip = false;
+				}
 
-			if(!NeedSnap)
-			{
-				s_FakeClientIDs[SnappingClient][i] = s_LastSnapID + 1;
+				s_FakeClientIDs[SnappingClient][i] = s_LastSnapID;
 			}
 		}
 	}
@@ -277,7 +286,7 @@ int CPoseCharacter::FindIDFor(int SnappingClient)
 	for(int i = 1; i < FAKE_MAX_CLIENTS; ++i)
 	{
 		// find oldest one
-		if(s_FakeClientIDs[SnappingClient][i] < SmallestSnapID)
+		if(!s_SnapCache[SnappingClient][i].m_Exists && s_FakeClientIDs[SnappingClient][i] < SmallestSnapID)
 		{
 			SmallestSnapID = s_FakeClientIDs[SnappingClient][i];
 			Result = i;
@@ -286,11 +295,11 @@ int CPoseCharacter::FindIDFor(int SnappingClient)
 	return Result;
 }
 
-bool CPoseCharacter::IsCurrent(int SnappingClient, int FakeID)
+bool CPoseCharacter::IsCurrent(int SnappingClient, int FakeID, void *pID)
 {
 	if(FakeID == 0)
 		return false;
-	if(s_FakeClientIDs[SnappingClient][FakeID] == s_LastSnapID)
+	if(s_SnapCache[SnappingClient][FakeID].m_pID == pID)
 		return true;
 
 	return false;
@@ -437,7 +446,7 @@ void CPoseCharacter::LoadPoses()
 	size_t NumPoses = 0;
 	io_read(File, &NumPoses, sizeof(size_t));
 
-	for(int i = 0; i < NumPoses; ++i)
+	for(size_t i = 0; i < NumPoses; ++i)
 	{
 		CNetObj_ClientInfo ClientInfo;
 		io_read(File, &ClientInfo, sizeof(m_ClientInfo));
@@ -467,22 +476,29 @@ void CPoseCharacter::Snap(int SnappingClient)
 	if(SnappingClient > -1 && !Server()->Translate(_id, SnappingClient))
 		return;
 
-	if(NetworkClipped(SnappingClient))
+	vec2 Pos = vec2(m_Core.m_X, m_Core.m_Y);
+	vec2 HookPos = vec2(m_Core.m_HookX, m_Core.m_HookY);
+	float HookLength = distance(Pos, HookPos);
+	if(HookLength > g_Config.m_SvPosesHookLimit)
+		HookPos = Pos + normalize(HookPos - Pos) * g_Config.m_SvPosesHookLimit;
+
+	if(NetworkClipped(SnappingClient) && NetworkClipped(SnappingClient, HookPos))
 		return;
 
-	IServer::CClientInfo Info;
-	Server()->GetClientInfo(SnappingClient, &Info);
-	bool IsOld = Info.m_DDNetVersion < VERSION_DDNET_OLD;
-
 	int ID = m_ClientPoseMap[SnappingClient];
-	if(!IsCurrent(SnappingClient, ID) || s_SnapCache[SnappingClient][ID].m_Exists)
+	if(!IsCurrent(SnappingClient, ID, this))
 		ID = FindIDFor(SnappingClient);
+	m_ClientPoseMap[SnappingClient] = ID;
 
-	if(ID <= 0 || (IsOld && ID >= VANILLA_MAX_CLIENTS) || ID >= FAKE_MAX_CLIENTS)
+	if(ID <= 0)
 		return;
 
 	auto *pCache = &s_SnapCache[SnappingClient][ID];
 
+	int NeedSkip = pCache->m_pID != this && s_FakeClientIDs[SnappingClient][ID] < s_LastSnapID;
+	pCache->m_pExpectedID = this;
+
+	pCache->m_NeedSkip = NeedSkip;
 	pCache->m_Laser.m_X = (int)m_Core.m_X;
 	pCache->m_Laser.m_Y = (int)m_Core.m_Y;
 	pCache->m_Laser.m_FromX = (int)m_Core.m_X;
@@ -497,10 +513,11 @@ void CPoseCharacter::Snap(int SnappingClient)
 	pCache->m_Char.m_Jumped = 0;
 	pCache->m_Char.m_HookState = m_Core.m_HookState > HOOK_IDLE ? HOOK_GRABBED : HOOK_IDLE;
 	pCache->m_Char.m_HookTick = 0;
-	pCache->m_Char.m_HookX = m_Core.m_HookX;
-	pCache->m_Char.m_HookY = m_Core.m_HookY;
-	pCache->m_Char.m_HookDx = m_Core.m_HookDx;
-	pCache->m_Char.m_HookDy = m_Core.m_HookDy;
+
+	pCache->m_Char.m_HookX = int(HookPos.x);
+	pCache->m_Char.m_HookY = int(HookPos.y);
+	pCache->m_Char.m_HookDx = 0;
+	pCache->m_Char.m_HookDy = 0;
 	pCache->m_Char.m_Emote = m_EmoteType;
 	pCache->m_Char.m_HookedPlayer = -1;
 	pCache->m_Char.m_AttackTick = 0;
@@ -538,7 +555,4 @@ void CPoseCharacter::Snap(int SnappingClient)
 	pCache->m_PlayerInfo.m_Team = 0;
 
 	pCache->m_Exists = true;
-
-	s_FakeClientIDs[SnappingClient][ID] = s_LastSnapID + 1;
-	m_ClientPoseMap[SnappingClient] = ID;
 }

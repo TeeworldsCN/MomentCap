@@ -3087,7 +3087,6 @@ void CGameContext::ConFindCapture(IConsole::IResult *pResult, void *pUserData)
 
 	if(!pPose)
 	{
-		pPlayer->Pause(CPlayer::PAUSE_NONE, false);
 		pSelf->SendChatTarget(pResult->m_ClientID, "未找到留影记录");
 	}
 	else

@@ -10,7 +10,10 @@
 
 struct SPoseSnapCache
 {
+	void *m_pID;
+	void *m_pExpectedID;
 	bool m_Exists;
+	bool m_NeedSkip;
 	CNetObj_Character m_Char;
 	CNetObj_DDNetCharacter m_DDNetChar;
 	CNetObj_Laser m_Laser;
@@ -50,7 +53,7 @@ public:
 
 	static void Init(CGameWorld *pGameWorld);
 	static int FindIDFor(int SnappingClient);
-	static bool IsCurrent(int SnappingClient, int FakeID);
+	static bool IsCurrent(int SnappingClient, int FakeID, void *pID);
 	static void StepSnapID() { s_LastSnapID++; }
 
 	vec2 Position() const { return vec2(m_Core.m_X, m_Core.m_Y); }
