@@ -3117,6 +3117,19 @@ void CGameContext::ConMoveCapture(IConsole::IResult *pResult, void *pUserData)
 		pSelf->SendChatTarget(pResult->m_ClientID, "未找到记录");
 }
 
+void CGameContext::ConPoseCapture(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(pResult->m_ClientID < 0 || pResult->m_ClientID >= MAX_CLIENTS)
+		return;
+
+	CPlayer *pPlayer = pSelf->m_apPlayers[pResult->m_ClientID];
+	if(!pPlayer)
+		return;
+
+	pPlayer->Pose();
+}
+
 // void CGameContext::ConCaptureHookPlus(IConsole::IResult *pResult, void *pUserData)
 // {
 // 	CGameContext *pSelf = (CGameContext *)pUserData;

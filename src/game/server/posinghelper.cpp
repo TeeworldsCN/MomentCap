@@ -179,6 +179,8 @@ bool CPoseCharacter::MovePose(const char *pName, int X, int Y)
 		auto &Pose = s_PoseMap[Key];
 		Pose.m_Core.m_X += X;
 		Pose.m_Core.m_Y += Y;
+		Pose.m_Core.m_HookX += X;
+		Pose.m_Core.m_HookY += Y;
 		return true;
 	}
 
