@@ -31,7 +31,7 @@ public:
 	static class CGameWorld *GameWorld() { return s_pGameWorld; }
 	static class CGameContext *GameServer() { return GameWorld()->GameServer(); }
 	static class IServer *Server() { return GameWorld()->Server(); }
-	static void SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap);
+	static int SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap);
 
 	static const CPoseCharacter *FindPoseByName(const char *pName);
 
@@ -60,7 +60,7 @@ public:
 	float Distance(vec2 Pos) const { return distance(Pos, vec2(m_Core.m_X, m_Core.m_Y)); }
 	void Snap(int SnappingClient);
 	int NetworkClipped(int SnappingClient);
-	int NetworkClipped(int SnappingClient, vec2 CheckPos);
+	static int NetworkClipped(int SnappingClient, vec2 CheckPos);
 
 	CNetObj_ClientInfo m_ClientInfo;
 	char m_aAddr[NETADDR_MAXSTRSIZE];

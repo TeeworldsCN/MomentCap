@@ -3788,7 +3788,7 @@ void CGameContext::OnSnap(int ClientID)
 		if(SnapNew)
 			m_apPlayers[ClientID]->m_LastPoseSnapTick = Server()->Tick();
 
-		CPoseCharacter::SnapPoses(ClientID, SendReal, SnapNew);
+		m_apPlayers[ClientID]->m_PoseOnScreen = CPoseCharacter::SnapPoses(ClientID, SendReal, SnapNew);
 
 		if(m_NumPlayers < g_Config.m_SvThresholdNoMonster)
 		{

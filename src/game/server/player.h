@@ -57,6 +57,7 @@ public:
 	int m_LastPoseTick;
 	int m_LastPoseSnapTick;
 	int m_LastPoseCommand;
+	int m_PoseOnScreen;
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player

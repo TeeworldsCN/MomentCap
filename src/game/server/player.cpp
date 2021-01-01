@@ -92,6 +92,7 @@ void CPlayer::Reset()
 	m_ForcingViewPos = 0;
 	m_ForcedViewPos = vec2(0, 0);
 
+	m_PoseOnScreen = 0;
 	m_LastPoseCommand = 0;
 	m_LastBrTick = Server()->Tick() + 4;
 	m_LastPoseTick = 0;
@@ -300,6 +301,8 @@ void CPlayer::Tick()
 		char aBuf[256] = {0};
 		int Offset = 0;
 
+		Offset += str_format(aBuf, sizeof(aBuf), "%d\n", m_PoseOnScreen);
+
 		CCharacter *pChar = GameServer()->m_World.ClosestCharacter(m_ViewPos, 200.0f, NULL);
 		CPlayer *pPlayer = NULL;
 		if(pChar)
@@ -307,7 +310,7 @@ void CPlayer::Tick()
 			char aAddr[NETADDR_MAXSTRSIZE] = {0};
 			pPlayer = pChar->GetPlayer();
 			Server()->GetClientAddr(pPlayer->GetCID(), aAddr, NETADDR_MAXSTRSIZE);
-			Offset = str_format(aBuf, sizeof(aBuf), "--玩家--\n名称(%d): %s\nIP: %s\n\n", pPlayer->GetCID(), Server()->ClientName(pPlayer->GetCID()), aAddr);
+			Offset += str_format(aBuf + Offset, sizeof(aBuf) - Offset - 1, "--玩家--\n名称(%d): %s\nIP: %s\n\n", pPlayer->GetCID(), Server()->ClientName(pPlayer->GetCID()), aAddr);
 		}
 
 		const CPoseCharacter *pPoseCharacter = CPoseCharacter::ClosestPose(m_ViewPos, 200.0f);
@@ -325,7 +328,7 @@ void CPlayer::Tick()
 		}
 
 		if(aBuf[0] != 0)
-			GameServer()->SendBroadcast(aBuf, m_ClientID, false);
+			GameServer()->SendBroadcast(aBuf, m_ClientID, Server()->ClientAuthed(m_ClientID));
 	}
 	else if((Server()->Tick() - m_LastBrTick) / Server()->TickSpeed() > 5)
 	{

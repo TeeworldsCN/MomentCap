@@ -14,8 +14,9 @@ CGameWorld *CPoseCharacter::s_pGameWorld = NULL;
 std::unordered_map<std::string, CPoseCharacter> CPoseCharacter::s_PoseMap;
 std::unordered_map<std::string, int> CPoseCharacter::s_AddressCount;
 
-void CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
+int CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
 {
+	int Count = 0;
 	if(!Server()->IsSixup(SnappingClient))
 	{
 		bool NeedSnap = NewSnap || !s_SnapCached[SnappingClient];
@@ -55,8 +56,15 @@ void CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
 			}
 			else
 			{
+				vec2 Pos = vec2(pCache->m_Char.m_X, pCache->m_Char.m_Y);
+				vec2 HookPos = vec2(pCache->m_Char.m_HookX, pCache->m_Char.m_HookY);
+
+				if(NetworkClipped(SnappingClient, Pos) && NetworkClipped(SnappingClient, HookPos))
+					continue;
+
 				if(!pCache->m_NeedSkip)
 				{
+					Count++;
 					CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, i, sizeof(CNetObj_Character)));
 					if(!pCharacter)
 						continue;
@@ -84,14 +92,17 @@ void CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
 					if(!pDDNetPlayer)
 						continue;
 					*pDDNetPlayer = pCache->m_DDNetPlayer;
-				} else {
+				}
+				else
+				{
 					pCache->m_NeedSkip = false;
 				}
 
-				s_FakeClientIDs[SnappingClient][i] = s_LastSnapID;
+				s_FakeClientIDs[SnappingClient][i] = s_LastSnapID + 1;
 			}
 		}
 	}
+	return Count;
 }
 
 bool CPoseCharacter::CanModify(CPlayer *pPlayer)
@@ -495,7 +506,7 @@ void CPoseCharacter::Snap(int SnappingClient)
 
 	auto *pCache = &s_SnapCache[SnappingClient][ID];
 
-	int NeedSkip = pCache->m_pID != this && s_FakeClientIDs[SnappingClient][ID] < s_LastSnapID;
+	int NeedSkip = pCache->m_pID != this && s_FakeClientIDs[SnappingClient][ID] == s_LastSnapID;
 	pCache->m_pExpectedID = this;
 
 	pCache->m_NeedSkip = NeedSkip;
