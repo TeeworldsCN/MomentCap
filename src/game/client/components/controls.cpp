@@ -568,8 +568,8 @@ void CControls::ClampMousePos()
 {
 	if(m_pClient->m_Snap.m_SpecInfo.m_Active && m_pClient->m_Snap.m_SpecInfo.m_SpectatorID < 0)
 	{
-		m_MousePos[g_Config.m_ClDummy].x = clamp(m_MousePos[g_Config.m_ClDummy].x, 200.0f, Collision()->GetWidth() * 32 - 200.0f);
-		m_MousePos[g_Config.m_ClDummy].y = clamp(m_MousePos[g_Config.m_ClDummy].y, 200.0f, Collision()->GetHeight() * 32 - 200.0f);
+		m_MousePos[g_Config.m_ClDummy].x = clamp(m_MousePos[g_Config.m_ClDummy].x, -1000.0f, Collision()->GetWidth() * 32 + 1000.0f);
+		m_MousePos[g_Config.m_ClDummy].y = clamp(m_MousePos[g_Config.m_ClDummy].y, -1000.0f, Collision()->GetHeight() * 32 + 1000.0f);
 	}
 	else
 	{

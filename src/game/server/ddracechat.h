@@ -60,7 +60,7 @@ CHAT_COMMAND("kill", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConProtectedKill, this, 
 
 CHAT_COMMAND("rm_cap", "s[capture name]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConRemoveCapture, this, "Remove a capture by name")
 CHAT_COMMAND("find", "s[capture name]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConFindCapture, this, "Find a capture in map")
-CHAT_COMMAND("mv_cap", "i[x] i[y]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConMoveCapture, this, "Move capture")
+CHAT_COMMAND("mv_cap", "s[capture name] i[x] i[y]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConMoveCapture, this, "Move capture")
 CHAT_COMMAND("mk_cap", "s[capture name]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConForceCapture, this, "Force capture")
 // CHAT_COMMAND("hookplus", "?s[capture name]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConCaptureHookPlus, this, "Enlong your hook")
 // CHAT_COMMAND("hookminus", "?s[capture name]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConCaptureHookMinus, this, "Shorten your hook")

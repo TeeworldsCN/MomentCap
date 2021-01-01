@@ -122,6 +122,7 @@ class CGameClient : public IGameClient
 	static void ConchainSpecialDummy(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainClTextEntitiesSize(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
+	static void ConScreenshotBatch(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneZone(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConchainMenuMap(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
@@ -179,6 +180,17 @@ public:
 	int m_DemoSpecID;
 
 	vec2 m_LocalCharacterPos;
+
+	// screenshot mode
+	float m_LastCapTime;
+	int m_CapPosX;
+	int m_CapPosY;
+	bool m_IsCap;
+	int m_CapMaxX;
+	int m_CapMaxY;
+	int m_CapStepX;
+	int m_CapStepY;
+	char m_aCapDate[20];
 
 	// predicted players
 	CCharacterCore m_PredictedPrevChar;

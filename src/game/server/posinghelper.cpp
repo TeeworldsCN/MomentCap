@@ -233,6 +233,12 @@ bool CPoseCharacter::Pose(CPlayer *pPlayer)
 	if(pPlayer->GetCharacter())
 	{
 		vec2 Pos = pPlayer->GetCharacter()->m_Pos;
+		if (Pos.x < 200.0f ||Pos.y < 200.0f || Pos.x >= GameServer()->Collision()->GetWidth() * 32 - 200.0f || Pos.y >= GameServer()->Collision()->GetHeight() * 32 - 200.0f)
+		{
+			GameServer()->SendChatTarget(pPlayer->GetCID(), "亲。。您超界了。。");
+			return false;
+		}
+
 		for(auto &Pose : s_PoseMap)
 		{
 			if(Pose.first.compare(Key) != 0 && distance(vec2(Pose.second.m_Core.m_X, Pose.second.m_Core.m_Y), Pos) < 100.0f)
