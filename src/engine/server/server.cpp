@@ -1827,7 +1827,9 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 	p.AddString(GameServer()->Version(), 32);
 	if(Type != SERVERINFO_VANILLA)
 	{
-		p.AddString(g_Config.m_SvName, 256);
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "%s 「记录%d个瞬间」", g_Config.m_SvName, GameServer()->NumPoses());
+		p.AddString(aBuf, 256);
 	}
 	else
 	{

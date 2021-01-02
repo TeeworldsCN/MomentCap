@@ -243,9 +243,10 @@ bool CPoseCharacter::Pose(CPlayer *pPlayer)
 
 		for(auto &Pose : s_PoseMap)
 		{
-			if(Pose.first.compare(Key) != 0 && distance(vec2(Pose.second.m_Core.m_X, Pose.second.m_Core.m_Y), Pos) < 100.0f)
+			float Dist = distance(vec2(Pose.second.m_Core.m_X, Pose.second.m_Core.m_Y), Pos);
+			if(Pose.first.compare(Key) != 0 && Dist < g_Config.m_SvPosesMinDistance)
 			{
-				GameServer()->SendChatTarget(pPlayer->GetCID(), "站在这里名字会被挡住哦。要不换个地方吧。");
+				GameServer()->SendChatTarget(pPlayer->GetCID(), "抱歉，您距离别的tee太近了。要不换个地方吧。");
 				return false;
 			}
 		}

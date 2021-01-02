@@ -272,6 +272,8 @@ public:
 	virtual bool IsClientReady(int ClientID);
 	virtual bool IsClientPlayer(int ClientID);
 
+	virtual int NumPoses() { return m_NumCaptures; }
+
 	virtual CUuid GameUuid();
 	virtual const char *GameType();
 	virtual const char *Version();
