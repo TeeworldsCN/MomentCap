@@ -44,6 +44,7 @@ public:
 	static bool RemovePoseByName(const char *pName);
 	static bool MovePose(const char *pName, int X, int Y);
 	static bool PoseWithName(CPlayer *pPlayer, const char *pName);
+	static void ChatPosesByIP(int ClientID, const char *pName);
 	// static bool PoseHookLengthDelta(const char *pName, int Delta, int Asker);
 	static void SavePoses();
 	static void LoadPoses();

@@ -3117,6 +3117,26 @@ void CGameContext::ConMoveCapture(IConsole::IResult *pResult, void *pUserData)
 		pSelf->SendChatTarget(pResult->m_ClientID, "未找到记录");
 }
 
+void CGameContext::ConShowOwnedBy(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!pSelf->Server()->ClientAuthed(pResult->m_ClientID))
+		return;
+
+	const CPoseCharacter *pPose = CPoseCharacter::FindPoseByName(pResult->GetString(0));
+	if (pPose)
+		CPoseCharacter::ChatPosesByIP(pResult->m_ClientID, pPose->m_aAddr);
+}
+
+void CGameContext::ConWhoisCapture(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!pSelf->Server()->ClientAuthed(pResult->m_ClientID))
+		return;
+
+	CPoseCharacter::ChatPosesByIP(pResult->m_ClientID, pResult->GetString(0));
+}
+
 void CGameContext::ConPoseCapture(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;

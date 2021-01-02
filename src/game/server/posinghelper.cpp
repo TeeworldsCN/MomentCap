@@ -268,9 +268,22 @@ bool CPoseCharacter::Pose(CPlayer *pPlayer)
 	return true;
 }
 
+void CPoseCharacter::ChatPosesByIP(int ClientID, const char *pIP)
+{
+	for(auto &Pose : s_PoseMap)
+	{
+		if(str_comp(Pose.second.m_aAddr, pIP) == 0)
+		{
+			GameServer()->SendChatTarget(ClientID, Pose.first.c_str());
+		}
+	}
+}
+
 bool CPoseCharacter::PoseWithName(CPlayer *pPlayer, const char *pName)
 {
-	std::string Key(pName);
+	char aSafeName[16];
+	str_copy(aSafeName, pName, sizeof(aSafeName));
+	std::string Key(aSafeName);
 
 	if(s_PoseMap.count(Key))
 		return false;

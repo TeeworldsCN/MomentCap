@@ -97,6 +97,8 @@ class CGameContext : public IGameServer
 	static void ConForceCapture(IConsole::IResult *pResult, void *pUserData);
 	static void ConMoveCapture(IConsole::IResult *pResult, void *pUserData);
 	static void ConPoseCapture(IConsole::IResult *pResult, void *pUserData);
+	static void ConShowOwnedBy(IConsole::IResult *pResult, void *pUserData);
+	static void ConWhoisCapture(IConsole::IResult *pResult, void *pUserData);
 	// static void ConCaptureHookPlus(IConsole::IResult *pResult, void *pUserData);
 	// static void ConCaptureHookMinus(IConsole::IResult *pResult, void *pUserData);
 
