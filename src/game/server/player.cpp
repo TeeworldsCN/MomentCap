@@ -20,6 +20,14 @@ IServer *CPlayer::Server() const { return m_pGameServer->Server(); }
 
 void CPlayer::Pose()
 {
+	if(g_Config.m_SvCaptureInterval < 0)
+	{
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "抱歉，活动已经结束了。目前服务器只可浏览。");
+		GameServer()->SendChatTarget(GetCID(), aBuf);
+		return;
+	}
+
 	int JoinedTime = (Server()->Tick() - m_JoinTick) / Server()->TickSpeed();
 	if(JoinedTime < g_Config.m_SvCaptureDelay)
 	{
@@ -330,7 +338,7 @@ void CPlayer::Tick()
 		if(aBuf[0] != 0)
 			GameServer()->SendBroadcast(aBuf, m_ClientID, Server()->ClientAuthed(m_ClientID));
 	}
-	else if((Server()->Tick() - m_LastBrTick) / Server()->TickSpeed() > 5)
+	else if((Server()->Tick() - m_LastBrTick) / Server()->TickSpeed() > 5 && g_Config.m_SvCaptureInterval >= 0)
 	{
 		char aBuf[256];
 		bool HasPose = CPoseCharacter::HasPose(this);

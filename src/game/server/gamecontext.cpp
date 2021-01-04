@@ -3274,6 +3274,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 
 	CPoseCharacter::Init(&m_World);
 	CPoseCharacter::LoadPoses();
+	m_NumCaptures = CPoseCharacter::Count();
 	mem_zero(m_aLastSendReal, sizeof(m_aLastSendReal));
 
 	m_GameUuid = RandomUuid();

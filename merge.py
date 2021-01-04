@@ -2,12 +2,12 @@ from PIL import Image
 
 tile_x = 17
 tile_y = 24
-source_w = 1920
-source_h = 1080
-offset_x = 1630
-offset_y = 970
-crop_w = 1200
-crop_h = 675
+source_w = 1920 * 2
+source_h = 1080 * 2
+offset_x = 1630 * 2
+offset_y = 970 * 2
+crop_w = 1200 * 2
+crop_h = 675 * 2
 feather_radius = 100
 
 left_step = offset_x - source_w // 2
@@ -22,7 +22,7 @@ final_h = top_start * 2 + top_step * tile_y
 crop_left = (source_w - crop_w) // 2
 crop_top = (source_h - crop_h) // 2
 
-folder = "/Users/tsfreddie/Library/Application Support/Teeworlds/screenshots/"
+folder = "C:/Users/tsfreddie/AppData/Roaming/Teeworlds/screenshots/"
 
 final_image = Image.new("RGB", (final_w, final_h))
 
