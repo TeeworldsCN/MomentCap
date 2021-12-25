@@ -34,6 +34,8 @@ public:
 	static class CGameContext *GameServer() { return GameWorld()->GameServer(); }
 	static class IServer *Server() { return GameWorld()->Server(); }
 	static int SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap);
+	static int CountPosesOfSpace(vec2 Pos, int SpatialKey, bool &Allowed);
+	static int CountPosesAround(vec2 Pos, bool &Allowed);
 	static void SnapPosesOfSpace(int SnappingClient, int SpatialKey);
 
 	static const CPoseCharacter *FindPoseByName(const char *pName);

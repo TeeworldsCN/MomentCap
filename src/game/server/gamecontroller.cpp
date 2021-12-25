@@ -426,38 +426,10 @@ void IGameController::Tick()
 		if(m_ReloadCountDown != ReloadTimeLeft)
 		{
 			m_ReloadCountDown = ReloadTimeLeft;
-			// if(m_ReloadCountDown > 0 && (m_ReloadCountDown == 30 || m_ReloadCountDown == 10 || m_ReloadCountDown <= 3))
-			// {
-			// 	char aMotd[900];
-			// 	str_format(aMotd, sizeof(aMotd), "服务器数据备份预警\n\n保存各位的照相数据需要一定时间，因此\n服务器在保存过程中可能会卡顿。\n\n\n\n\n\n\n--- 距离本次保存还有：\n        %02d 秒", m_ReloadCountDown);
-			// 	CNetMsg_Sv_Motd Msg;
-			// 	Msg.m_pMessage = aMotd;
-			// 	for(int i = 0; i < MAX_CLIENTS; ++i)
-			// 		if(GameServer()->m_apPlayers[i])
-			// 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
-			// }
-
-			// if(m_ReloadCountDown == 0)
-			// {
-			// 	char aMotd[900];
-			// 	str_format(aMotd, sizeof(aMotd), "服务器数据备份预警\n\n保存各位的照相数据需要一定时间，因此\n服务器在保存过程中可能会卡顿。\n\n\n\n\n\n\n--- 数据保存中 ---");
-			// 	CNetMsg_Sv_Motd Msg;
-			// 	Msg.m_pMessage = aMotd;
-			// 	for(int i = 0; i < MAX_CLIENTS; ++i)
-			// 		if(GameServer()->m_apPlayers[i])
-			// 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
-			// }
 
 			if(g_Config.m_SvSaveInterval > 0 && m_ReloadCountDown < 0)
 			{
 				CPoseCharacter::SavePoses();
-				// char aMotd[900];
-				// str_format(aMotd, sizeof(aMotd), "服务器数据备份预警\n\n保存各位的照相数据需要一定时间，因此\n服务器在保存过程中可能会卡顿。\n\n\n\n\n\n\n--- 数据保存完毕 --- \n\n\n按 Tab 可快速关闭该通知。");
-				// CNetMsg_Sv_Motd Msg;
-				// Msg.m_pMessage = aMotd;
-				// for(int i = 0; i < MAX_CLIENTS; ++i)
-				// 	if(GameServer()->m_apPlayers[i])
-				// 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
 				m_LastSaveTick = Server()->Tick();
 			}
 		}

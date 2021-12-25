@@ -16,6 +16,63 @@ std::unordered_map<int, std::set<std::string>> CPoseCharacter::s_SpatialMap;
 std::unordered_set<std::string> CPoseCharacter::s_PoseSnapCache;
 std::unordered_map<std::string, int> CPoseCharacter::s_AddressCount;
 
+int CPoseCharacter::CountPosesOfSpace(vec2 Pos, int SpatialKey, bool &Allowed)
+{
+	if(!s_SpatialMap.count(SpatialKey))
+		return 0;
+	auto map = s_SpatialMap[SpatialKey];
+	int result = 0;
+	for(auto key : map)
+	{
+		if(s_PoseSnapCache.count(key))
+			continue;
+		s_PoseSnapCache.insert(key);
+		int X = s_PoseMap[key].m_Core.m_X;
+		int Y = s_PoseMap[key].m_Core.m_Y;
+		float dx = Pos.x - X;
+		float dy = Pos.y - Y;
+		if(absolute(dx) <= g_Config.m_SvPosesAreaCheckX && absolute(dy) <= g_Config.m_SvPosesAreaCheckY)
+			result++;
+
+		if(absolute(dx) <= g_Config.m_SvPosesMinDistX && absolute(dy) <= g_Config.m_SvPosesMinDistY)
+			Allowed = false;
+	}
+	return result;
+}
+
+int CPoseCharacter::CountPosesAround(vec2 Pos, bool &Allowed)
+{
+	// Spatial hash snap
+	int ViewX = Pos.x;
+	int ViewY = Pos.y;
+
+	s_PoseSnapCache.clear();
+
+	int Center = HashCoordinate(ViewX, ViewY);
+	int TopLeft = HashCoordinate(ViewX, ViewY, -1, -1);
+	int TopRight = HashCoordinate(ViewX, ViewY, 1, -1);
+	int BottomLeft = HashCoordinate(ViewX, ViewY, -1, 1);
+	int BottomRight = HashCoordinate(ViewX, ViewY, 1, 1);
+	int Left = HashCoordinate(ViewX, ViewY, -1, 0);
+	int Right = HashCoordinate(ViewX, ViewY, 1, 0);
+	int Top = HashCoordinate(ViewX, ViewY, 0, -1);
+	int Bottom = HashCoordinate(ViewX, ViewY, 0, 1);
+
+	int result = 0;
+
+	result += CountPosesOfSpace(Pos, Center, Allowed);
+	result += CountPosesOfSpace(Pos, TopLeft, Allowed);
+	result += CountPosesOfSpace(Pos, TopRight, Allowed);
+	result += CountPosesOfSpace(Pos, BottomLeft, Allowed);
+	result += CountPosesOfSpace(Pos, BottomRight, Allowed);
+	result += CountPosesOfSpace(Pos, Left, Allowed);
+	result += CountPosesOfSpace(Pos, Right, Allowed);
+	result += CountPosesOfSpace(Pos, Top, Allowed);
+	result += CountPosesOfSpace(Pos, Bottom, Allowed);
+
+	return result;
+}
+
 void CPoseCharacter::SnapPosesOfSpace(int SnappingClient, int SpatialKey)
 {
 	if(!s_SpatialMap.count(SpatialKey))
@@ -159,7 +216,7 @@ bool CPoseCharacter::CanModify(CPlayer *pPlayer)
 
 	if(Exists && str_comp(Pose.m_aTimeoutCode, pPlayer->m_TimeoutCode) != 0 && Pose.m_aTimeoutCode[0] != 0)
 	{
-		GameServer()->SendChatTarget(pPlayer->GetCID(), "抱歉，您没有权限修改这个ID的占位。请尝试重新加入服务器，如果这个提示一直出现，请联系CHN服管理员。联系QQ群：1044036098，或发送邮件给：2021@teeworlds.cn");
+		GameServer()->SendChatTarget(pPlayer->GetCID(), g_Config.m_TrNoPermission);
 		return false;
 	}
 
@@ -247,23 +304,6 @@ bool CPoseCharacter::MovePose(const char *pName, int X, int Y)
 	return false;
 }
 
-// bool CPoseCharacter::PoseHookLengthDelta(const char *pName, int Delta, int Asker)
-// {
-// 	std::string Key(pName);
-// 	if(s_PoseMap.count(Key))
-// 	{
-// 		auto &Pose = s_PoseMap[Key];
-// 		if(Pose.m_Core.m_HookState == HOOK_GRABBED)
-// 		{
-// 			GameServer()->SendChatTarget(Asker, "不能再长了啦");
-// 		}
-// 		dbg_msg("test", "hook state: %d", Pose.m_Core.m_HookState);
-// 		return true;
-// 	}
-
-// 	return false;
-// }
-
 const CPoseCharacter *CPoseCharacter::FindPoseByName(const char *pName)
 {
 	std::string Key(pName);
@@ -275,7 +315,7 @@ const CPoseCharacter *CPoseCharacter::FindPoseByName(const char *pName)
 
 int CPoseCharacter::HashCoordinate(int X, int Y, int OffsetX, int OffsetY)
 {
-	return ((short)(X / 800) + OffsetX) + ((short)(Y / 600) + OffsetY) << 16;
+	return ((short)(X / 1000) + OffsetX) + ((short)(Y / 800) + OffsetY) << 16;
 }
 
 bool CPoseCharacter::Pose(CPlayer *pPlayer)
@@ -292,28 +332,38 @@ bool CPoseCharacter::Pose(CPlayer *pPlayer)
 
 	if(!Exists && AddressCount >= g_Config.m_SvMaxCapturePerIP)
 	{
-		GameServer()->SendChatTarget(pPlayer->GetCID(), "抱歉，您占位数量太多啦。请取消一个占位再试。");
+		GameServer()->SendChatTarget(pPlayer->GetCID(), g_Config.m_TrTooMany);
 		return false;
 	}
 
-	// check distance WARNING: SLOWWWWWW
 	if(pPlayer->GetCharacter())
 	{
-		vec2 Pos = pPlayer->GetCharacter()->m_Pos;
-		if(Pos.x < 200.0f || Pos.y < 200.0f || Pos.x >= GameServer()->Collision()->GetWidth() * 32 - 200.0f || Pos.y >= GameServer()->Collision()->GetHeight() * 32 - 200.0f)
+		if(pPlayer->GetCharacter()->m_FreezeTime)
 		{
-			GameServer()->SendChatTarget(pPlayer->GetCID(), "亲。。您超界了。。");
+			GameServer()->SendChatTarget(pPlayer->GetCID(), g_Config.m_TrFrozen);
 			return false;
 		}
 
-		for(auto &Pose : s_PoseMap)
+		vec2 Pos = pPlayer->GetCharacter()->m_Pos;
+		if(Pos.x < 200.0f || Pos.y < 200.0f || Pos.x >= GameServer()->Collision()->GetWidth() * 32 - 200.0f || Pos.y >= GameServer()->Collision()->GetHeight() * 32 - 200.0f)
 		{
-			float Dist = distance(vec2(Pose.second.m_Core.m_X, Pose.second.m_Core.m_Y), Pos);
-			if(Pose.first.compare(Key) != 0 && Dist < g_Config.m_SvPosesMinDistance)
-			{
-				GameServer()->SendChatTarget(pPlayer->GetCID(), "抱歉，您距离别的tee太近了。要不换个地方吧。");
-				return false;
-			}
+			GameServer()->SendChatTarget(pPlayer->GetCID(), g_Config.m_TrOutOfBounds);
+			return false;
+		}
+
+		bool Allowed = true;
+
+		// Better check
+		if(CountPosesAround(Pos, Allowed) > 60)
+		{
+			GameServer()->SendChatTarget(pPlayer->GetCID(), g_Config.m_TrTooFull);
+			return false;
+		}
+
+		if(!Allowed)
+		{
+			GameServer()->SendChatTarget(pPlayer->GetCID(), g_Config.m_TrTooClose);
+			return false;
 		}
 	}
 
@@ -659,7 +709,7 @@ void CPoseCharacter::Snap(int SnappingClient)
 	pCache->m_ClientInfo = m_ClientInfo;
 
 	pCache->m_PlayerInfo.m_Latency = 999;
-	pCache->m_PlayerInfo.m_Score = -1221; // 2021
+	pCache->m_PlayerInfo.m_Score = -1222; // 2022
 	pCache->m_PlayerInfo.m_Local = 0;
 	pCache->m_PlayerInfo.m_ClientID = ID;
 	pCache->m_PlayerInfo.m_Team = 0;

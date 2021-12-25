@@ -23,7 +23,7 @@ void CPlayer::Pose()
 	if(g_Config.m_SvCaptureInterval < 0)
 	{
 		char aBuf[128];
-		str_format(aBuf, sizeof(aBuf), "抱歉，活动已经结束了。目前服务器只可浏览。");
+		str_format(aBuf, sizeof(aBuf), g_Config.m_TrEventOver);
 		GameServer()->SendChatTarget(GetCID(), aBuf);
 		return;
 	}
@@ -33,7 +33,7 @@ void CPlayer::Pose()
 	{
 		int TimeLeft = g_Config.m_SvCaptureDelay - JoinedTime;
 		char aBuf[128];
-		str_format(aBuf, sizeof(aBuf), "你需要等 %d 秒才能开始占位。", TimeLeft);
+		str_format(aBuf, sizeof(aBuf), g_Config.m_TrDelay, TimeLeft);
 		GameServer()->SendChatTarget(GetCID(), aBuf);
 		return;
 	}
@@ -56,7 +56,7 @@ void CPlayer::Pose()
 		{
 			int TimeLeft = g_Config.m_SvCaptureInterval - TimePassed;
 			char aBuf[128];
-			str_format(aBuf, sizeof(aBuf), "你需要等 %d 秒才能再次占位。", TimeLeft);
+			str_format(aBuf, sizeof(aBuf), g_Config.m_TrWait, TimeLeft);
 			GameServer()->SendChatTarget(GetCID(), aBuf);
 			return;
 		}
@@ -318,7 +318,7 @@ void CPlayer::Tick()
 			char aAddr[NETADDR_MAXSTRSIZE] = {0};
 			pPlayer = pChar->GetPlayer();
 			Server()->GetClientAddr(pPlayer->GetCID(), aAddr, NETADDR_MAXSTRSIZE);
-			Offset += str_format(aBuf + Offset, sizeof(aBuf) - Offset - 1, "--玩家--\n名称(%d): %s\nIP: %s\n\n", pPlayer->GetCID(), Server()->ClientName(pPlayer->GetCID()), aAddr);
+			Offset += str_format(aBuf + Offset, sizeof(aBuf) - Offset - 1, "--Player--\nName(%d): %s\nIP: %s\n\n", pPlayer->GetCID(), Server()->ClientName(pPlayer->GetCID()), aAddr);
 		}
 
 		const CPoseCharacter *pPoseCharacter = CPoseCharacter::ClosestPose(m_ViewPos, 200.0f);
@@ -332,7 +332,7 @@ void CPlayer::Tick()
 			aInts[3] = pPoseCharacter->m_ClientInfo.m_Name3;
 			IntsToStr(aInts, 4, aName);
 
-			str_format(aBuf + Offset, sizeof(aBuf) - Offset - 1, "--记录--\n%s\nIP: %s\nTimeout: %s", aName, pPoseCharacter->m_aAddr, pPoseCharacter->m_aTimeoutCode);
+			str_format(aBuf + Offset, sizeof(aBuf) - Offset - 1, "--Capture--\n%s\nIP: %s\nTimeout: %s", aName, pPoseCharacter->m_aAddr, pPoseCharacter->m_aTimeoutCode);
 		}
 
 		if(aBuf[0] != 0)
@@ -344,23 +344,7 @@ void CPlayer::Tick()
 		bool HasPose = CPoseCharacter::HasPose(this);
 		bool CanCapture = JoinedTime > g_Config.m_SvCaptureDelay;
 
-		int Offset = str_format(aBuf, sizeof(aBuf), "%s\n在线玩家数: %d / %d\n共记下了 %d 个瞬间\n", CanCapture ? (HasPose ? "按 K/自杀键 取消占位" : "按 K/自杀键 拍照") : "元旦快乐！", GameServer()->m_NumPlayers, g_Config.m_SvMaxClients, GameServer()->m_NumCaptures);
-
-		if(GameServer()->m_NumPlayers < g_Config.m_SvThresholdNoNearby)
-		{
-			if(GetCharacter())
-			{
-				CCharacter *pChar = GameServer()->m_World.ClosestCharacter(GetCharacter()->m_Pos, 1000.0f, GetCharacter());
-				CPlayer *pPlayer = NULL;
-				if(pChar)
-				{
-					char aAddr[NETADDR_MAXSTRSIZE] = {0};
-					pPlayer = pChar->GetPlayer();
-					Server()->GetClientAddr(pPlayer->GetCID(), aAddr, NETADDR_MAXSTRSIZE);
-					str_format(aBuf + Offset, sizeof(aBuf) - Offset - 1, "\n\n-附近玩家:\n%s", Server()->ClientName(pPlayer->GetCID()));
-				}
-			}
-		}
+		str_format(aBuf, sizeof(aBuf), "%s", CanCapture ? (HasPose ? g_Config.m_TrCancelPrompt : g_Config.m_TrCapturePrompt) : g_Config.m_TrBroadcast);
 
 		GameServer()->SendBroadcast(aBuf, m_ClientID, false);
 		m_LastBrTick = Server()->Tick();
@@ -557,7 +541,7 @@ void CPlayer::Snap(int SnappingClient, int FakeID)
 			return;
 
 		pPlayerInfo->m_Latency = Latency;
-		pPlayerInfo->m_Score = Score;
+		pPlayerInfo->m_Score = -1222; // 2022
 		pPlayerInfo->m_Local = (FakeID == 0) && (m_Paused != PAUSE_PAUSED || ClientVersion >= VERSION_DDNET_OLD);
 		pPlayerInfo->m_ClientID = FakeID;
 		pPlayerInfo->m_Team = (ClientVersion < VERSION_DDNET_OLD || m_Paused != PAUSE_PAUSED || m_ClientID != SnappingClient) && m_Paused < PAUSE_SPEC ? m_Team : TEAM_SPECTATORS;

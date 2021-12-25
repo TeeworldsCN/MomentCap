@@ -3,6 +3,6 @@
 #ifndef GAME_SERVER_GAMEMODES_GAMEMODE_H
 #define GAME_SERVER_GAMEMODES_GAMEMODE_H
 
-#define GAME_NAME "DDraceMoment"
-#define TEST_NAME "TestDDraceMoment"
+#define GAME_NAME "MomentCap"
+#define TEST_NAME "MomentCap"
 #endif // GAME_SERVER_GAMEMODES_GAMEMODE_H

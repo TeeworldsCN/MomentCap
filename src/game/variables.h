@@ -196,7 +196,10 @@ MACRO_CONFIG_INT(SvPosesQueueIntervalLow, sv_poses_queue_interval_low, 1500, 0, 
 MACRO_CONFIG_INT(SvPosesShowDistanceX, sv_poses_show_dist_x, 1000, 0, 10000, CFGFLAG_SERVER, "Poses clip range x")
 MACRO_CONFIG_INT(SvPosesShowDistanceY, sv_poses_show_dist_y, 800, 0, 10000, CFGFLAG_SERVER, "Poses clip range y")
 MACRO_CONFIG_INT(SvPosesHookLimit, sv_poses_hook_limit, 800, -1, 10000, CFGFLAG_SERVER, "Poses max hook length")
-MACRO_CONFIG_INT(SvPosesMinDistance, sv_poses_min_distance, 150, 0, 10000, CFGFLAG_SERVER, "Poses min distance in between")
+MACRO_CONFIG_INT(SvPosesAreaCheckX, sv_poses_area_check_x, 1000, 0, 10000, CFGFLAG_SERVER, "Area to check before taking poses")
+MACRO_CONFIG_INT(SvPosesAreaCheckY, sv_poses_area_check_y, 800, 0, 10000, CFGFLAG_SERVER, "Area to check before taking poses")
+MACRO_CONFIG_INT(SvPosesMinDistX, sv_poses_min_dist_x, 192, 0, 10000, CFGFLAG_SERVER, "Minimum distance between poses")
+MACRO_CONFIG_INT(SvPosesMinDistY, sv_poses_min_dist_y, 96, 0, 10000, CFGFLAG_SERVER, "Minimum distance between poses")
 
 MACRO_CONFIG_INT(ClVideoPauseWithDemo, cl_video_pausewithdemo, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Pause video rendering when demo playing pause")
 MACRO_CONFIG_INT(ClVideoShowhud, cl_video_showhud, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ingame HUD when rendering video")

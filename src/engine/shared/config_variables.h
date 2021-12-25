@@ -403,3 +403,17 @@ MACRO_CONFIG_INT(GfxEnableTextureUnitOptimization, gfx_enable_texture_unit_optim
 MACRO_CONFIG_INT(GfxUsePreinitBuffer, gfx_use_preinitialized_buffer, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Use only one buffer for data, that is uploaded to the GPU(might help when using an iGPUs).")
 
 MACRO_CONFIG_INT(ClVideoRecorderFPS, cl_video_recorder_fps, 60, 1, 1000, CFGFLAG_SAVE | CFGFLAG_CLIENT, "At which FPS the videorecorder should record demos.")
+
+MACRO_CONFIG_STR(TrNoSpec, tr_no_spec, 256, "Sorry, you can not spectator other players in server.", CFGFLAG_SERVER, "")
+MACRO_CONFIG_STR(TrEventOver, tr_event_over, 256, "The new year event is over, you can still view the map.", CFGFLAG_SERVER, "")
+MACRO_CONFIG_STR(TrDelay, tr_delay, 256, "You need to wait %d seconds before capturing.", CFGFLAG_SERVER, "")
+MACRO_CONFIG_STR(TrWait, tr_wait, 256, "You need to wait %d seconds before you can capture again.", CFGFLAG_SERVER, "")
+MACRO_CONFIG_STR(TrCapturePrompt, tr_capture_prompt, 256, "Press K (kill) to capture", CFGFLAG_SERVER, "")
+MACRO_CONFIG_STR(TrCancelPrompt, tr_cancel_prompt, 256, "Press K (kill) to cancel", CFGFLAG_SERVER, "")
+MACRO_CONFIG_STR(TrBroadcast, tr_broadcast, 256, "Happy New Year!", CFGFLAG_SERVER, "")
+MACRO_CONFIG_STR(TrNoPermission, tr_no_permission, 256, "You don't have permission to remove capture under this name, contact moderators on discord if you think this is an error.", CFGFLAG_SERVER, "")
+MACRO_CONFIG_STR(TrTooMany, tr_too_many, 256, "You have made too many captures, please cancel some of them before capturing more.", CFGFLAG_SERVER, "")
+MACRO_CONFIG_STR(TrFrozen, tr_frozen, 256, "You can't when frozen.", CFGFLAG_SERVER, "")
+MACRO_CONFIG_STR(TrOutOfBounds, tr_out_of_bounds, 256, "You can't capture out of bounds.", CFGFLAG_SERVER, "")
+MACRO_CONFIG_STR(TrTooFull, tr_too_full, 256, "This area is too crowed, please capture at another place.", CFGFLAG_SERVER, "")
+MACRO_CONFIG_STR(TrTooClose, tr_too_close, 256, "You are too close to other tees, please capture at another place.", CFGFLAG_SERVER, "")

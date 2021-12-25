@@ -2201,7 +2201,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			// HACK: no spectator mode
 			if(pMsg->m_SpectatorID >= 0)
 			{
-				SendChatTarget(ClientID, "抱歉，活动服务器不能旁观。");
+				SendChatTarget(ClientID, g_Config.m_TrNoSpec);
 				return;
 			}
 
@@ -3039,9 +3039,9 @@ void CGameContext::ConRemoveCapture(IConsole::IResult *pResult, void *pUserData)
 	if(!pSelf->Server()->ClientAuthed(pResult->m_ClientID))
 		return;
 	if(CPoseCharacter::RemovePoseByName(pResult->GetString(0)))
-		pSelf->SendChatTarget(pResult->m_ClientID, "删除成功");
+		pSelf->SendChatTarget(pResult->m_ClientID, "Capture removed.");
 	else
-		pSelf->SendChatTarget(pResult->m_ClientID, "未找到记录");
+		pSelf->SendChatTarget(pResult->m_ClientID, "No capture found.");
 }
 
 void CGameContext::ConForceCapture(IConsole::IResult *pResult, void *pUserData)
@@ -3060,9 +3060,9 @@ void CGameContext::ConForceCapture(IConsole::IResult *pResult, void *pUserData)
 	if(*pResult->GetString(0))
 	{
 		if(CPoseCharacter::PoseWithName(pPlayer, pResult->GetString(0)))
-			pSelf->SendChatTarget(pResult->m_ClientID, "添加成功");
+			pSelf->SendChatTarget(pResult->m_ClientID, "Capture made.");
 		else
-			pSelf->SendChatTarget(pResult->m_ClientID, "已有该记录");
+			pSelf->SendChatTarget(pResult->m_ClientID, "Capture already exists.");
 	}
 }
 
@@ -3079,7 +3079,7 @@ void CGameContext::ConFindCapture(IConsole::IResult *pResult, void *pUserData)
 
 	if(pSelf->Server()->Tick() - pPlayer->m_LastPoseCommand < pSelf->Server()->TickSpeed() * 2)
 	{
-		pSelf->SendChatTarget(pResult->m_ClientID, "亲，您慢一点。");
+		pSelf->SendChatTarget(pResult->m_ClientID, "Wait a second before using this command again.");
 		return;
 	}
 	pPlayer->m_LastPoseCommand = pSelf->Server()->Tick();
@@ -3088,7 +3088,7 @@ void CGameContext::ConFindCapture(IConsole::IResult *pResult, void *pUserData)
 
 	if(!pPose)
 	{
-		pSelf->SendChatTarget(pResult->m_ClientID, "未找到留影记录");
+		pSelf->SendChatTarget(pResult->m_ClientID, "No capture found.");
 	}
 	else
 	{
@@ -3113,9 +3113,9 @@ void CGameContext::ConMoveCapture(IConsole::IResult *pResult, void *pUserData)
 		return;
 
 	if(CPoseCharacter::MovePose(pResult->GetString(0), pResult->GetInteger(1), pResult->GetInteger(2)))
-		pSelf->SendChatTarget(pResult->m_ClientID, "移动成功");
+		pSelf->SendChatTarget(pResult->m_ClientID, "Caputre moved.");
 	else
-		pSelf->SendChatTarget(pResult->m_ClientID, "未找到记录");
+		pSelf->SendChatTarget(pResult->m_ClientID, "No capture found.");
 }
 
 void CGameContext::ConShowOwnedBy(IConsole::IResult *pResult, void *pUserData)
