@@ -214,7 +214,12 @@ bool CPoseCharacter::CanModify(CPlayer *pPlayer)
 
 	auto &Pose = s_PoseMap[Key];
 
-	if(Exists && str_comp(Pose.m_aTimeoutCode, pPlayer->m_TimeoutCode) != 0 && Pose.m_aTimeoutCode[0] != 0)
+	bool validTimeoutCode = str_comp(Pose.m_aTimeoutCode, pPlayer->m_TimeoutCode) != 0 && Pose.m_aTimeoutCode[0] != 0;
+	char aBuf[48];
+	Server()->GetClientAddr(pPlayer->GetCID(), aBuf, NETADDR_MAXSTRSIZE);
+	bool validAddress = str_comp(Pose.m_aAddr, aBuf) != 0;
+
+	if(Exists && (validTimeoutCode || validAddress))
 	{
 		GameServer()->SendChatTarget(pPlayer->GetCID(), g_Config.m_TrNoPermission);
 		return false;
