@@ -95,6 +95,8 @@ public:
 	int m_LastWhisperTo;
 	int m_LastInvited;
 
+	bool m_SendReal;
+
 	int m_SendVoteIndex;
 
 	CTeeInfo m_TeeInfos;

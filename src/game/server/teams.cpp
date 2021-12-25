@@ -456,9 +456,26 @@ void CGameTeams::SendTeamsState(int ClientID)
 
 	CMsgPacker Msg(NETMSGTYPE_SV_TEAMSSTATE);
 
-	// leave one for spec
-	for(unsigned i = 0; i < FAKE_MAX_CLIENTS; i++)
-		Msg.AddInt(m_Core.Team(ClientID));
+	if(m_pGameContext->m_apPlayers[ClientID]->m_SendReal)
+	{
+		// leave one for spec
+		for(unsigned i = 0; i < FAKE_MAX_CLIENTS; i++)
+		{
+			unsigned cid = i;
+			if(cid == ClientID)
+				cid = 0;
+			else if(cid == 0)
+				cid = ClientID;
+			Msg.AddInt(m_Core.Team(cid));
+		}
+	}
+	else
+	{
+		for(unsigned i = 0; i < FAKE_MAX_CLIENTS; i++)
+		{
+			Msg.AddInt(0);
+		}
+	}
 
 	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }

@@ -3852,6 +3852,11 @@ void CGameContext::OnSnap(int ClientID)
 			}
 		}
 	}
+	else
+	{
+		m_apPlayers[ClientID]->m_SendReal = SendReal;
+		((CGameControllerDDRace *)m_pController)->m_Teams.SendTeamsState(ClientID);
+	}
 
 	m_aLastSendReal[ClientID] = SendReal;
 
