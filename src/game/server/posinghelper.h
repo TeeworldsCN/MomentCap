@@ -6,7 +6,9 @@
 #include <game/server/entity.h>
 
 #include <game/gamecore.h>
+#include <set>
 #include <unordered_map>
+#include <unordered_set>
 
 struct SPoseSnapCache
 {
@@ -32,6 +34,7 @@ public:
 	static class CGameContext *GameServer() { return GameWorld()->GameServer(); }
 	static class IServer *Server() { return GameWorld()->Server(); }
 	static int SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap);
+	static void SnapPosesOfSpace(int SnappingClient, int SpatialKey);
 
 	static const CPoseCharacter *FindPoseByName(const char *pName);
 
@@ -77,7 +80,11 @@ private:
 	static uint32_t s_FakeClientIDs[MAX_CLIENTS][FAKE_MAX_CLIENTS];
 	static uint32_t s_LastSnapID;
 	static std::unordered_map<std::string, CPoseCharacter> s_PoseMap;
+	static std::unordered_map<int, std::set<std::string>> s_SpatialMap;
+	static std::unordered_set<std::string> s_PoseSnapCache;
 	static std::unordered_map<std::string, int> s_AddressCount;
+
+	static int HashCoordinate(int X, int Y, int OffsetX = 0, int OffsetY = 0);
 
 	uint8_t m_ClientPoseMap[MAX_CLIENTS];
 

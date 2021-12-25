@@ -54,7 +54,7 @@ public:
 	virtual int NetworkClipped(int SnappingClient);
 	virtual int NetworkClipped(int SnappingClient, vec2 CheckPos);
 
-	void ManualSnap(int SnappingClient, int FakeID);
+	void ManualSnap(int SnappingClient, int FakeID, int SwapID = -1, bool FixHook = false);
 	bool IsGrounded();
 
 	void SetWeapon(int W);
@@ -166,7 +166,7 @@ private:
 
 	// DDRace
 
-	void SnapCharacter(int SnappingClient, int ID);
+	void SnapCharacter(int SnappingClient, int ID, int SwapID = -1, bool FixHook = false);
 	static bool IsSwitchActiveCb(int Number, void *pUser);
 	void HandleTiles(int Index);
 	float m_Time;

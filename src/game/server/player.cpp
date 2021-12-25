@@ -459,8 +459,17 @@ void CPlayer::SnapGhost(int SnappingClient)
 
 	pObj->m_X = (int)pChar->m_Pos.x;
 	pObj->m_Y = (int)pChar->m_Pos.y;
-	pObj->m_Type = POWERUP_WEAPON;
-	pObj->m_Subtype = pChar->Core()->m_ActiveWeapon;
+
+	if(pChar->m_FreezeTime)
+	{
+		pObj->m_Type = POWERUP_NINJA;
+		pObj->m_Subtype = POWERUP_NINJA;
+	}
+	else
+	{
+		pObj->m_Type = POWERUP_WEAPON;
+		pObj->m_Subtype = pChar->Core()->m_ActiveWeapon;
+	}
 
 	// pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_GhostSnapIDs[1], sizeof(CNetObj_Laser)));
 	// if(!pObj)

@@ -1078,7 +1078,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 }
 
 //TODO: Move the emote stuff to a function
-void CCharacter::SnapCharacter(int SnappingClient, int ID)
+void CCharacter::SnapCharacter(int SnappingClient, int ID, int SwapID, bool FixHook)
 {
 	CCharacterCore *pCore;
 	int Tick, Emote = m_EmoteType, Weapon = m_Core.m_ActiveWeapon, AmmoCount = 0,
@@ -1176,10 +1176,33 @@ void CCharacter::SnapCharacter(int SnappingClient, int ID)
 		pCharacter->m_Tick = Tick;
 		pCharacter->m_Emote = Emote;
 
-		if(pCharacter->m_HookedPlayer != -1)
+		if(FixHook)
 		{
-			if(!Server()->Translate(pCharacter->m_HookedPlayer, SnappingClient))
+			if(pCharacter->m_HookedPlayer >= 0)
+			{
+				pCharacter->m_HookState = HOOK_RETRACT_START;
 				pCharacter->m_HookedPlayer = -1;
+			}
+		}
+		else
+		{
+			if(pCharacter->m_HookedPlayer != -1)
+			{
+				if(!Server()->Translate(pCharacter->m_HookedPlayer, SnappingClient))
+					pCharacter->m_HookedPlayer = -1;
+			}
+
+			if(SwapID >= 0)
+			{
+				if(pCharacter->m_HookedPlayer == SwapID)
+				{
+					pCharacter->m_HookedPlayer = 0;
+				}
+				else if(pCharacter->m_HookedPlayer == 0)
+				{
+					pCharacter->m_HookedPlayer = SwapID;
+				}
+			}
 		}
 
 		pCharacter->m_AttackTick = m_AttackTick;
@@ -1221,7 +1244,7 @@ void CCharacter::Snap(int SnappingClient)
 	// HACK: no auto snap;
 }
 
-void CCharacter::ManualSnap(int SnappingClient, int FakeID)
+void CCharacter::ManualSnap(int SnappingClient, int FakeID, int SwapID, bool FixHook)
 {
 	int ID = m_pPlayer->GetCID();
 
@@ -1253,11 +1276,13 @@ void CCharacter::ManualSnap(int SnappingClient, int FakeID)
 	if(m_Paused)
 		return;
 
-	SnapCharacter(SnappingClient, FakeID);
+	SnapCharacter(SnappingClient, FakeID, SwapID, FixHook);
 
 	CNetObj_DDNetCharacter *pDDNetCharacter = static_cast<CNetObj_DDNetCharacter *>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, FakeID, sizeof(CNetObj_DDNetCharacter)));
 	if(!pDDNetCharacter)
 		return;
+
+	bool isLobby = GameServer()->GetDDRaceTeam(ID) == 0;
 
 	pDDNetCharacter->m_Flags = 0;
 	if(m_Solo)
@@ -1266,9 +1291,9 @@ void CCharacter::ManualSnap(int SnappingClient, int FakeID)
 		pDDNetCharacter->m_Flags |= CHARACTERFLAG_SUPER;
 	if(m_EndlessHook)
 		pDDNetCharacter->m_Flags |= CHARACTERFLAG_ENDLESS_HOOK;
-	if(!m_Core.m_Collision || !GameServer()->Tuning()->m_PlayerCollision)
+	if(isLobby || !m_Core.m_Collision || !GameServer()->Tuning()->m_PlayerCollision)
 		pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_COLLISION;
-	if(!m_Core.m_Hook || !GameServer()->Tuning()->m_PlayerHooking)
+	if(isLobby || !m_Core.m_Hook || !GameServer()->Tuning()->m_PlayerHooking)
 		pDDNetCharacter->m_Flags |= CHARACTERFLAG_NO_HOOK;
 	if(m_SuperJump)
 		pDDNetCharacter->m_Flags |= CHARACTERFLAG_ENDLESS_JUMP;
@@ -1301,7 +1326,8 @@ void CCharacter::ManualSnap(int SnappingClient, int FakeID)
 	if(m_Core.m_ActiveWeapon == WEAPON_NINJA)
 		pDDNetCharacter->m_Flags |= CHARACTERFLAG_WEAPON_NINJA;
 
-	pDDNetCharacter->m_FreezeEnd = m_DeepFreeze ? -1 : m_FreezeTime == 0 ? 0 : Server()->Tick() + m_FreezeTime;
+	pDDNetCharacter->m_FreezeEnd = m_DeepFreeze ? -1 : m_FreezeTime == 0 ? 0 :
+                                                                               Server()->Tick() + m_FreezeTime;
 	pDDNetCharacter->m_Jumps = m_Core.m_Jumps;
 	pDDNetCharacter->m_TeleCheckpoint = m_TeleCheckpoint;
 	pDDNetCharacter->m_StrongWeakID = m_StrongWeakID;

@@ -12,7 +12,23 @@ uint32_t CPoseCharacter::s_LastSnapID = 0;
 
 CGameWorld *CPoseCharacter::s_pGameWorld = NULL;
 std::unordered_map<std::string, CPoseCharacter> CPoseCharacter::s_PoseMap;
+std::unordered_map<int, std::set<std::string>> CPoseCharacter::s_SpatialMap;
+std::unordered_set<std::string> CPoseCharacter::s_PoseSnapCache;
 std::unordered_map<std::string, int> CPoseCharacter::s_AddressCount;
+
+void CPoseCharacter::SnapPosesOfSpace(int SnappingClient, int SpatialKey)
+{
+	if(!s_SpatialMap.count(SpatialKey))
+		return;
+	auto map = s_SpatialMap[SpatialKey];
+	for(auto key : map)
+	{
+		if(s_PoseSnapCache.count(key))
+			continue;
+		s_PoseSnapCache.insert(key);
+		s_PoseMap[key].Snap(SnappingClient);
+	}
+}
 
 int CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
 {
@@ -25,10 +41,36 @@ int CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
 			for(auto &Cache : s_SnapCache[SnappingClient])
 				Cache.m_Exists = false;
 
+			/* Replaced this with a more efficient version
 			for(auto &Pose : s_PoseMap)
 			{
 				Pose.second.Snap(SnappingClient);
-			}
+			}*/
+
+			// Spatial hash snap
+			int ViewX = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.x;
+			int ViewY = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.y;
+			s_PoseSnapCache.clear();
+
+			int Center = HashCoordinate(ViewX, ViewY);
+			int TopLeft = HashCoordinate(ViewX, ViewY, -1, -1);
+			int TopRight = HashCoordinate(ViewX, ViewY, 1, -1);
+			int BottomLeft = HashCoordinate(ViewX, ViewY, -1, 1);
+			int BottomRight = HashCoordinate(ViewX, ViewY, 1, 1);
+			int Left = HashCoordinate(ViewX, ViewY, -1, 0);
+			int Right = HashCoordinate(ViewX, ViewY, 1, 0);
+			int Top = HashCoordinate(ViewX, ViewY, 0, -1);
+			int Bottom = HashCoordinate(ViewX, ViewY, 0, 1);
+
+			SnapPosesOfSpace(SnappingClient, Center);
+			SnapPosesOfSpace(SnappingClient, TopLeft);
+			SnapPosesOfSpace(SnappingClient, TopRight);
+			SnapPosesOfSpace(SnappingClient, BottomLeft);
+			SnapPosesOfSpace(SnappingClient, BottomRight);
+			SnapPosesOfSpace(SnappingClient, Left);
+			SnapPosesOfSpace(SnappingClient, Right);
+			SnapPosesOfSpace(SnappingClient, Top);
+			SnapPosesOfSpace(SnappingClient, Bottom);
 
 			for(auto &Cache : s_SnapCache[SnappingClient])
 				Cache.m_pID = Cache.m_pExpectedID;
@@ -152,6 +194,11 @@ bool CPoseCharacter::RemovePose(CPlayer *pPlayer)
 	if(s_PoseMap.count(Key))
 	{
 		s_AddressCount[s_PoseMap[Key].m_aAddr]--;
+		auto &Pose = s_PoseMap[Key];
+		int BodyHash = HashCoordinate(Pose.m_Core.m_X, Pose.m_Core.m_Y);
+		int HookHash = HashCoordinate(Pose.m_Core.m_HookX, Pose.m_Core.m_HookY);
+		s_SpatialMap[BodyHash].erase(Key);
+		s_SpatialMap[HookHash].erase(Key);
 		s_PoseMap.erase(Key);
 	}
 
@@ -164,6 +211,11 @@ bool CPoseCharacter::RemovePoseByName(const char *pName)
 	if(s_PoseMap.count(Key))
 	{
 		s_AddressCount[s_PoseMap[Key].m_aAddr]--;
+		auto &Pose = s_PoseMap[Key];
+		int BodyHash = HashCoordinate(Pose.m_Core.m_X, Pose.m_Core.m_Y);
+		int HookHash = HashCoordinate(Pose.m_Core.m_HookX, Pose.m_Core.m_HookY);
+		s_SpatialMap[BodyHash].erase(Key);
+		s_SpatialMap[HookHash].erase(Key);
 		s_PoseMap.erase(Key);
 		return true;
 	}
@@ -177,10 +229,18 @@ bool CPoseCharacter::MovePose(const char *pName, int X, int Y)
 	if(s_PoseMap.count(Key))
 	{
 		auto &Pose = s_PoseMap[Key];
+		int BodyHash = HashCoordinate(Pose.m_Core.m_X, Pose.m_Core.m_Y);
+		int HookHash = HashCoordinate(Pose.m_Core.m_HookX, Pose.m_Core.m_HookY);
+		s_SpatialMap[BodyHash].erase(Key);
+		s_SpatialMap[HookHash].erase(Key);
 		Pose.m_Core.m_X += X;
 		Pose.m_Core.m_Y += Y;
 		Pose.m_Core.m_HookX += X;
 		Pose.m_Core.m_HookY += Y;
+		BodyHash = HashCoordinate(Pose.m_Core.m_X, Pose.m_Core.m_Y);
+		HookHash = HashCoordinate(Pose.m_Core.m_HookX, Pose.m_Core.m_HookY);
+		s_SpatialMap[BodyHash].insert(Key);
+		s_SpatialMap[HookHash].insert(Key);
 		return true;
 	}
 
@@ -213,6 +273,11 @@ const CPoseCharacter *CPoseCharacter::FindPoseByName(const char *pName)
 	return NULL;
 }
 
+int CPoseCharacter::HashCoordinate(int X, int Y, int OffsetX, int OffsetY)
+{
+	return ((short)(X / 800) + OffsetX) + ((short)(Y / 600) + OffsetY) << 16;
+}
+
 bool CPoseCharacter::Pose(CPlayer *pPlayer)
 {
 	if(!CanModify(pPlayer))
@@ -235,7 +300,7 @@ bool CPoseCharacter::Pose(CPlayer *pPlayer)
 	if(pPlayer->GetCharacter())
 	{
 		vec2 Pos = pPlayer->GetCharacter()->m_Pos;
-		if (Pos.x < 200.0f ||Pos.y < 200.0f || Pos.x >= GameServer()->Collision()->GetWidth() * 32 - 200.0f || Pos.y >= GameServer()->Collision()->GetHeight() * 32 - 200.0f)
+		if(Pos.x < 200.0f || Pos.y < 200.0f || Pos.x >= GameServer()->Collision()->GetWidth() * 32 - 200.0f || Pos.y >= GameServer()->Collision()->GetHeight() * 32 - 200.0f)
 		{
 			GameServer()->SendChatTarget(pPlayer->GetCID(), "亲。。您超界了。。");
 			return false;
@@ -263,6 +328,11 @@ bool CPoseCharacter::Pose(CPlayer *pPlayer)
 		Pose.WritePlayer(pPlayer);
 		s_AddressCount[Pose.m_aAddr]++;
 		Pose.m_Init = true;
+
+		int BodyHash = HashCoordinate(Pose.m_Core.m_X, Pose.m_Core.m_Y);
+		int HookHash = HashCoordinate(Pose.m_Core.m_HookX, Pose.m_Core.m_HookY);
+		s_SpatialMap[BodyHash].insert(Key);
+		s_SpatialMap[HookHash].insert(Key);
 	}
 
 	return true;
@@ -307,6 +377,10 @@ bool CPoseCharacter::PoseWithName(CPlayer *pPlayer, const char *pName)
 
 		s_AddressCount[Pose.m_aAddr]++;
 		Pose.m_Init = true;
+		int BodyHash = HashCoordinate(Pose.m_Core.m_X, Pose.m_Core.m_Y);
+		int HookHash = HashCoordinate(Pose.m_Core.m_HookX, Pose.m_Core.m_HookY);
+		s_SpatialMap[BodyHash].insert(Key);
+		s_SpatialMap[HookHash].insert(Key);
 	}
 
 	return true;
@@ -498,6 +572,10 @@ void CPoseCharacter::LoadPoses()
 		io_read(File, &Pose.m_aAddr, sizeof(m_aAddr));
 		s_AddressCount[Pose.m_aAddr]++;
 		Pose.m_Init = true;
+		int BodyHash = HashCoordinate(Pose.m_Core.m_X, Pose.m_Core.m_Y);
+		int HookHash = HashCoordinate(Pose.m_Core.m_HookX, Pose.m_Core.m_HookY);
+		s_SpatialMap[BodyHash].insert(Key);
+		s_SpatialMap[HookHash].insert(Key);
 	}
 
 	io_close(File);
@@ -511,8 +589,7 @@ void CPoseCharacter::Snap(int SnappingClient)
 
 	vec2 Pos = vec2(m_Core.m_X, m_Core.m_Y);
 	vec2 HookPos = vec2(m_Core.m_HookX, m_Core.m_HookY);
-	float HookLength = distance(Pos, HookPos);
-	if(HookLength > g_Config.m_SvPosesHookLimit)
+	if(g_Config.m_SvPosesHookLimit >= 0 && distance(Pos, HookPos) > g_Config.m_SvPosesHookLimit)
 		HookPos = Pos + normalize(HookPos - Pos) * g_Config.m_SvPosesHookLimit;
 
 	if(NetworkClipped(SnappingClient) && NetworkClipped(SnappingClient, HookPos))

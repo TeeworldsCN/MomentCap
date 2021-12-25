@@ -10,6 +10,7 @@ bundle/
 
 .ninja_deps
 .ninja_log
+.cmake
 CMakeCache.txt
 CMakeFiles
 CMakeSettings*

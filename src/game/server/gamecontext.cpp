@@ -466,12 +466,10 @@ void CGameContext::SendChat(int ChatterClientID, int Team, const char *pText, in
 
 void CGameContext::SendEmoticon(int ClientID, int Emoticon)
 {
-	// HACK: no emoticon
-
-	// CNetMsg_Sv_Emoticon Msg;
-	// Msg.m_ClientID = ClientID;
-	// Msg.m_Emoticon = Emoticon;
-	// Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+	CNetMsg_Sv_Emoticon Msg;
+	Msg.m_ClientID = ClientID;
+	Msg.m_Emoticon = Emoticon;
+	Server()->SendPackMsgOne(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
 void CGameContext::SendWeaponPickup(int ClientID, int Weapon)
@@ -1634,7 +1632,8 @@ void *CGameContext::PreProcessMsg(int *MsgID, CUnpacker *pUnpacker, int ClientID
 			if(pMsg7->m_Force)
 			{
 				str_format(s_aRawMsg, sizeof(s_aRawMsg), "force_vote \"%s\" \"%s\" \"%s\"", pMsg7->m_Type, pMsg7->m_Value, pMsg7->m_Reason);
-				Console()->SetAccessLevel(Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD : IConsole::ACCESS_LEVEL_HELPER);
+				Console()->SetAccessLevel(Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD :
+                                                                                                                                         IConsole::ACCESS_LEVEL_HELPER);
 				Console()->ExecuteLine(s_aRawMsg, ClientID, false);
 				Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
 				return 0;
@@ -1805,7 +1804,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 					int Authed = Server()->GetAuthedState(ClientID);
 					if(Authed)
-						Console()->SetAccessLevel(Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD : IConsole::ACCESS_LEVEL_HELPER);
+						Console()->SetAccessLevel(Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD :
+                                                                                                                                                         IConsole::ACCESS_LEVEL_HELPER);
 					else
 						Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_USER);
 					Console()->SetPrintOutputLevel(m_ChatPrintCBIndex, 0);
@@ -2170,22 +2170,23 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			Server()->SetClientDDNetVersion(ClientID, DDNetVersion);
 			OnClientDDNetVersionKnown(ClientID);
 		}
-		else if(MsgID == NETMSGTYPE_CL_SHOWOTHERSLEGACY)
-		{
-			if(g_Config.m_SvShowOthers && !g_Config.m_SvShowOthersDefault)
-			{
-				CNetMsg_Cl_ShowOthersLegacy *pMsg = (CNetMsg_Cl_ShowOthersLegacy *)pRawMsg;
-				pPlayer->m_ShowOthers = pMsg->m_Show;
-			}
-		}
-		else if(MsgID == NETMSGTYPE_CL_SHOWOTHERS)
-		{
-			if(g_Config.m_SvShowOthers && !g_Config.m_SvShowOthersDefault)
-			{
-				CNetMsg_Cl_ShowOthers *pMsg = (CNetMsg_Cl_ShowOthers *)pRawMsg;
-				pPlayer->m_ShowOthers = pMsg->m_Show;
-			}
-		}
+		// Disable showothers menu settings
+		// else if(MsgID == NETMSGTYPE_CL_SHOWOTHERSLEGACY)
+		// {
+		// 	if(g_Config.m_SvShowOthers && !g_Config.m_SvShowOthersDefault)
+		// 	{
+		// 		CNetMsg_Cl_ShowOthersLegacy *pMsg = (CNetMsg_Cl_ShowOthersLegacy *)pRawMsg;
+		// 		pPlayer->m_ShowOthers = pMsg->m_Show;
+		// 	}
+		// }
+		// else if(MsgID == NETMSGTYPE_CL_SHOWOTHERS)
+		// {
+		// 	if(g_Config.m_SvShowOthers && !g_Config.m_SvShowOthersDefault)
+		// 	{
+		// 		CNetMsg_Cl_ShowOthers *pMsg = (CNetMsg_Cl_ShowOthers *)pRawMsg;
+		// 		pPlayer->m_ShowOthers = pMsg->m_Show;
+		// 	}
+		// }
 		else if(MsgID == NETMSGTYPE_CL_SHOWDISTANCE)
 		{
 			CNetMsg_Cl_ShowDistance *pMsg = (CNetMsg_Cl_ShowDistance *)pRawMsg;
@@ -3124,7 +3125,7 @@ void CGameContext::ConShowOwnedBy(IConsole::IResult *pResult, void *pUserData)
 		return;
 
 	const CPoseCharacter *pPose = CPoseCharacter::FindPoseByName(pResult->GetString(0));
-	if (pPose)
+	if(pPose)
 		CPoseCharacter::ChatPosesByIP(pResult->m_ClientID, pPose->m_aAddr);
 }
 
@@ -3798,15 +3799,15 @@ void CGameContext::OnSnap(int ClientID)
 	m_pController->Snap(ClientID);
 	m_Events.Snap(ClientID);
 
+	bool SendReal = m_apPlayers[ClientID]->m_PlayerFlags &
+			(Server()->ClientAuthed(ClientID) ?
+                                        PLAYERFLAG_SCOREBOARD :
+                                        (PLAYERFLAG_CHATTING | PLAYERFLAG_SCOREBOARD));
+
 	// HACK: only send self as 0
 	m_apPlayers[ClientID]->Snap(ClientID, 0);
 	if(m_apPlayers[ClientID]->GetCharacter())
-		m_apPlayers[ClientID]->GetCharacter()->ManualSnap(ClientID, 0);
-
-	bool SendReal = m_apPlayers[ClientID]->m_PlayerFlags &
-			(Server()->ClientAuthed(ClientID) ?
-					PLAYERFLAG_SCOREBOARD :
-					(PLAYERFLAG_CHATTING | PLAYERFLAG_SCOREBOARD));
+		m_apPlayers[ClientID]->GetCharacter()->ManualSnap(ClientID, 0, ClientID, !SendReal);
 
 	// high capacity mode, don't send real
 	if(m_MaxClientID >= FAKE_MAX_CLIENTS)
@@ -3838,7 +3839,7 @@ void CGameContext::OnSnap(int ClientID)
 							pPlayer->Snap(ClientID, PID == 0 ? ClientID : PID);
 							auto pChar = pPlayer->GetCharacter();
 							if(pChar)
-								pChar->ManualSnap(ClientID, PID == 0 ? ClientID : PID);
+								pChar->ManualSnap(ClientID, PID == 0 ? ClientID : PID, ClientID, !SendReal);
 						}
 					}
 					else
