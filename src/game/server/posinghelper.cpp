@@ -359,7 +359,7 @@ bool CPoseCharacter::Pose(CPlayer *pPlayer)
 		bool Allowed = true;
 
 		// Better check
-		if(CountPosesAround(Pos, Allowed) > 60)
+		if(CountPosesAround(Pos, Allowed) > g_Config.m_SvCrowdednessCheck)
 		{
 			GameServer()->SendChatTarget(pPlayer->GetCID(), g_Config.m_TrTooFull);
 			return false;

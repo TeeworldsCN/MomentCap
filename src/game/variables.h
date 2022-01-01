@@ -200,6 +200,7 @@ MACRO_CONFIG_INT(SvPosesAreaCheckX, sv_poses_area_check_x, 1000, 0, 10000, CFGFL
 MACRO_CONFIG_INT(SvPosesAreaCheckY, sv_poses_area_check_y, 800, 0, 10000, CFGFLAG_SERVER, "Area to check before taking poses")
 MACRO_CONFIG_INT(SvPosesMinDistX, sv_poses_min_dist_x, 192, 0, 10000, CFGFLAG_SERVER, "Minimum distance between poses")
 MACRO_CONFIG_INT(SvPosesMinDistY, sv_poses_min_dist_y, 96, 0, 10000, CFGFLAG_SERVER, "Minimum distance between poses")
+MACRO_CONFIG_INT(SvCrowdednessCheck, sv_crowdedness_check, 48, 0, 63, CFGFLAG_SERVER, "How many tees shown at the same screen to be considered as crowded")
 
 MACRO_CONFIG_INT(ClVideoPauseWithDemo, cl_video_pausewithdemo, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Pause video rendering when demo playing pause")
 MACRO_CONFIG_INT(ClVideoShowhud, cl_video_showhud, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ingame HUD when rendering video")
