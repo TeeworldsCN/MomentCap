@@ -3023,6 +3023,14 @@ int CGameContext::MapScan(const char *pName, int IsDir, int DirType, void *pUser
 	return 0;
 }
 
+void CGameContext::ConCountCaptures(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "currently there are %d captures in this server.", pSelf->NumPoses());
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "momentcap", "");
+}
+
 void CGameContext::ConSaveCaptures(IConsole::IResult *pResult, void *pUserData)
 {
 	CPoseCharacter::SavePoses();
@@ -3251,6 +3259,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("vote", "r['yes'|'no']", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
 	Console()->Register("dump_antibot", "", CFGFLAG_SERVER, ConDumpAntibot, this, "Dumps the antibot status");
 
+	Console()->Register("count_captures", "", CFGFLAG_SERVER, ConCountCaptures, this, "Count how many captures are in this server");
 	Console()->Register("save_captures", "", CFGFLAG_SERVER, ConSaveCaptures, this, "Force a save");
 	Console()->Register("load_captures", "", CFGFLAG_SERVER, ConLoadCaptures, this, "Force a load");
 

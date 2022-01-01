@@ -90,6 +90,7 @@ class CGameContext : public IGameServer
 	static void CommandCallback(int ClientID, int FlagMask, const char *pCmd, IConsole::IResult *pResult, void *pUser);
 	static void TeeHistorianWrite(const void *pData, int DataSize, void *pUser);
 
+	static void ConCountCaptures(IConsole::IResult *pResult, void *pUserData);
 	static void ConSaveCaptures(IConsole::IResult *pResult, void *pUserData);
 	static void ConLoadCaptures(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveCapture(IConsole::IResult *pResult, void *pUserData);
