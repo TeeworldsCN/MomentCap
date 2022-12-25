@@ -1,0 +1,20 @@
+{
+  "devDependencies": {
+    "@types/node": "^16.11.11"
+  },
+  "dependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/express": "^4.17.13",
+    "axios": "^0.25.0",
+    "express": "^4.17.2"
+  },
+  "name": "momentcap-skin-cache",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

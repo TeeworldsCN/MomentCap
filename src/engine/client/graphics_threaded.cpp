@@ -411,22 +411,22 @@ IGraphics::CTextureHandle CGraphics_Threaded::LoadTextureRaw(int Width, int Heig
 		return m_InvalidTexture;
 #endif
 
-	if((Flags & IGraphics::TEXLOAD_TO_2D_ARRAY_TEXTURE) != 0 || (Flags & IGraphics::TEXLOAD_TO_3D_TEXTURE) != 0)
-	{
-		if(Width == 0 || (Width % 16) != 0 || Height == 0 || (Height % 16) != 0)
-		{
-			SWarning NewWarning;
-			char aText[128];
-			aText[0] = '\0';
-			if(pTexName)
-			{
-				str_format(aText, sizeof(aText), "\"%s\"", pTexName);
-			}
-			str_format(NewWarning.m_aWarningMsg, sizeof(NewWarning.m_aWarningMsg), Localize("The width or height of texture %s is not divisible by 16, which might cause visual bugs."), aText);
+	// if((Flags & IGraphics::TEXLOAD_TO_2D_ARRAY_TEXTURE) != 0 || (Flags & IGraphics::TEXLOAD_TO_3D_TEXTURE) != 0)
+	// {
+	// 	if(Width == 0 || (Width % 16) != 0 || Height == 0 || (Height % 16) != 0)
+	// 	{
+	// 		SWarning NewWarning;
+	// 		char aText[128];
+	// 		aText[0] = '\0';
+	// 		if(pTexName)
+	// 		{
+	// 			str_format(aText, sizeof(aText), "\"%s\"", pTexName);
+	// 		}
+	// 		str_format(NewWarning.m_aWarningMsg, sizeof(NewWarning.m_aWarningMsg), Localize("The width or height of texture %s is not divisible by 16, which might cause visual bugs."), aText);
 
-			m_Warnings.emplace_back(NewWarning);
-		}
-	}
+	// 		m_Warnings.emplace_back(NewWarning);
+	// 	}
+	// }
 
 	if(Width == 0 || Height == 0)
 		return IGraphics::CTextureHandle();
@@ -586,15 +586,15 @@ bool CGraphics_Threaded::CheckImageDivisibility(const char *pFileName, CImageInf
 	bool ImageIsValid = true;
 	bool WidthBroken = Img.m_Width == 0 || (Img.m_Width % DivX) != 0;
 	bool HeightBroken = Img.m_Height == 0 || (Img.m_Height % DivY) != 0;
-	if(WidthBroken || HeightBroken)
-	{
-		SWarning NewWarning;
-		str_format(NewWarning.m_aWarningMsg, sizeof(NewWarning.m_aWarningMsg), Localize("The width of texture %s is not divisible by %d, or the height is not divisible by %d, which might cause visual bugs."), pFileName, DivX, DivY);
+	// if(WidthBroken || HeightBroken)
+	// {
+	// 	SWarning NewWarning;
+	// 	str_format(NewWarning.m_aWarningMsg, sizeof(NewWarning.m_aWarningMsg), Localize("The width of texture %s is not divisible by %d, or the height is not divisible by %d, which might cause visual bugs."), pFileName, DivX, DivY);
 
-		m_Warnings.emplace_back(NewWarning);
+	// 	m_Warnings.emplace_back(NewWarning);
 
-		ImageIsValid = false;
-	}
+	// 	ImageIsValid = false;
+	// }
 
 	if(AllowResize && !ImageIsValid && Img.m_Width > 0 && Img.m_Height > 0)
 	{

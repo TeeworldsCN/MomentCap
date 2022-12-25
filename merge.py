@@ -1,43 +1,36 @@
 from PIL import Image
 
-tile_x = 17
-tile_y = 24
-source_w = 1920 * 2
-source_h = 1080 * 2
-offset_x = 1630 * 2
-offset_y = 970 * 2
-crop_w = 1200 * 2
-crop_h = 675 * 2
+total_tile_x = 58
+total_tile_y = 38
+tile_x = 58
+tile_y = 38
+source_w = 2300
+source_h = 2000
+offset_x = 1000
+offset_y = 850
+crop_left = 400
+crop_top = 380
 feather_radius = 100
 
-left_step = offset_x - source_w // 2
-top_step = offset_y - source_h // 2
+final_w = offset_x * (tile_x - 1) + source_w
+final_h = offset_y * (tile_y - 1) + source_h
 
-left_start = offset_x - crop_w // 2 - left_step
-top_start = offset_y - crop_h // 2 - top_step
-
-final_w = left_start * 2 + left_step * tile_x
-final_h = top_start * 2 + top_step * tile_y
-
-crop_left = (source_w - crop_w) // 2
-crop_top = (source_h - crop_h) // 2
-
-folder = "C:/Users/tsfreddie/AppData/Roaming/Teeworlds/screenshots/"
+folder = "C:/Users/tsfre/AppData/Roaming/Teeworlds/screenshots/"
 
 final_image = Image.new("RGB", (final_w, final_h))
 
 def process_vec(x, y):
-    index = y * tile_x + x
+    index = y * total_tile_x + x
 
     filename = folder + "%04d_%02d_%02d.png" % (index, x, y)
     print("Processing: " + filename)
     image = Image.open(filename)
 
-    paste_left = left_start + left_step * x
-    paste_top = top_start + top_step * y
+    paste_left = offset_x * x + crop_left;
+    paste_top = offset_y * y + crop_top;
 
-    tmp_crop_w = crop_w
-    tmp_crop_h = crop_h
+    tmp_crop_w = source_w - (crop_left * 2);
+    tmp_crop_h = source_h - (crop_top * 2);
     tmp_crop_left = crop_left
     tmp_crop_top = crop_top
 
@@ -57,13 +50,13 @@ def process_vec(x, y):
     if x == tile_x-1:
         tmp_crop_left = 0
         tmp_crop_w = source_w
-        paste_left = left_step * x
+        paste_left = offset_x * x
         feather = False
     
     if y == tile_y-1:
         tmp_crop_top = 0
         tmp_crop_h = source_h
-        paste_top = top_step * y
+        paste_top = offset_y * y
         feather = False
     
     image = image.crop((tmp_crop_left, tmp_crop_top, tmp_crop_w, tmp_crop_h))

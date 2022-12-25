@@ -252,7 +252,7 @@ void CGameClient::OnConsoleInit()
 	// register tune zone command to allow the client prediction to load tunezones from the map
 	Console()->Register("tune_zone", "i[zone] s[tuning] i[value]", CFGFLAG_CLIENT | CFGFLAG_GAME, ConTuneZone, this, "Tune in zone a variable to value");
 
-	Console()->Register("screenshot_batch", "", CFGFLAG_CLIENT | CFGFLAG_GAME, ConScreenshotBatch, this, "Screenshot the entire map");
+	Console()->Register("screenshot_batch", "i[stepx] i[stepy]", CFGFLAG_CLIENT | CFGFLAG_GAME, ConScreenshotBatch, this, "Screenshot the entire map");
 
 	for(int i = 0; i < m_All.m_Num; i++)
 		m_All.m_paComponents[i]->m_pClient = this;
@@ -686,7 +686,7 @@ void CGameClient::OnRender()
 	if(m_IsCap)
 	{
 		float m_Time = time_get() / (float)time_freq();
-		if (m_Time - m_LastCapTime > 0.5f)
+		if(m_Time - m_LastCapTime > 0.5f)
 		{
 			int Index_X = (m_CapPosX - 200) / m_CapStepX;
 			int Index_Y = (m_CapPosY - 200) / m_CapStepY;
@@ -697,12 +697,14 @@ void CGameClient::OnRender()
 			Graphics()->TakeCustomScreenshot(aFile);
 			m_LastCapTime = time_get() / (float)time_freq();
 			m_CapPosX += m_CapStepX;
-			if(m_CapPosX >= m_CapMaxX + m_CapStepX) {
+			if(m_CapPosX >= m_CapMaxX + m_CapStepX)
+			{
 				m_CapPosX = 200;
 				m_CapPosY += m_CapStepY;
 			}
 
-			if(m_CapPosY >= m_CapMaxY + m_CapStepY) {
+			if(m_CapPosY >= m_CapMaxY + m_CapStepY)
+			{
 				m_IsCap = false;
 			}
 		}
@@ -1674,12 +1676,12 @@ void CGameClient::OnNewSnapshot()
 	static float LastScreenAspect = .0;
 	static bool LastDummyConnected = false;
 	float ZoomToSend = m_pCamera->m_ZoomSmoothingTarget == .0 ? m_pCamera->m_Zoom // Initial
-								    :
-								    m_pCamera->m_ZoomSmoothingTarget > m_pCamera->m_Zoom ? m_pCamera->m_ZoomSmoothingTarget // Zooming out
-															   :
-															   m_pCamera->m_ZoomSmoothingTarget < m_pCamera->m_Zoom ? LastZoom // Zooming in
-																						  :
-																						  m_pCamera->m_Zoom; // Not zooming
+			   :
+			   m_pCamera->m_ZoomSmoothingTarget > m_pCamera->m_Zoom ? m_pCamera->m_ZoomSmoothingTarget // Zooming out
+			   :
+			   m_pCamera->m_ZoomSmoothingTarget < m_pCamera->m_Zoom ? LastZoom // Zooming in
+										  :
+                                                                                  m_pCamera->m_Zoom; // Not zooming
 	if(ZoomToSend != LastZoom || Graphics()->ScreenAspect() != LastScreenAspect || (Client()->DummyConnected() && !LastDummyConnected))
 	{
 		CNetMsg_Cl_ShowDistance Msg;
@@ -3011,8 +3013,8 @@ void CGameClient::ConScreenshotBatch(IConsole::IResult *pResult, void *pUserData
 		pSelf->m_CapMaxY = pSelf->Collision()->GetHeight() * 32 - 200;
 		pSelf->m_CapPosX = 200;
 		pSelf->m_CapPosY = 200;
-		pSelf->m_CapStepX = 500;
-		pSelf->m_CapStepY = 320;
+		pSelf->m_CapStepX = pResult->GetInteger(0);
+		pSelf->m_CapStepY = pResult->GetInteger(1);
 		pSelf->m_LastCapTime = time_get() / (float)time_freq() + 2.0f;
 		str_timestamp(pSelf->m_aCapDate, sizeof(pSelf->m_aCapDate));
 	}

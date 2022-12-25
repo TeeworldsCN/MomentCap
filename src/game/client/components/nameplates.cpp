@@ -134,7 +134,7 @@ void CNamePlates::RenderNameplatePos(vec2 Position, const CNetObj_PlayerInfo *pP
 		TOutlineColor.m_A *= Alpha;
 		TColor.m_A *= Alpha;
 
-		float YOffset = Position.y - 38;
+		float YOffset = Position.y - 30;
 
 		if(m_aNamePlates[ClientID].m_NameTextContainerIndex != -1)
 		{

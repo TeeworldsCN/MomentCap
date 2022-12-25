@@ -65,8 +65,7 @@ public:
 	vec2 Position() const { return vec2(m_Core.m_X, m_Core.m_Y); }
 	float Distance(vec2 Pos) const { return distance(Pos, vec2(m_Core.m_X, m_Core.m_Y)); }
 	void Snap(int SnappingClient);
-	int NetworkClipped(int SnappingClient);
-	static int NetworkClipped(int SnappingClient, vec2 CheckPos);
+	static int NetworkClipped(int SnappingClient, vec2 From, vec2 To);
 
 	CNetObj_ClientInfo m_ClientInfo;
 	char m_aAddr[NETADDR_MAXSTRSIZE];

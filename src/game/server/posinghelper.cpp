@@ -158,7 +158,7 @@ int CPoseCharacter::SnapPoses(int SnappingClient, bool AsSpec, bool NewSnap)
 				vec2 Pos = vec2(pCache->m_Char.m_X, pCache->m_Char.m_Y);
 				vec2 HookPos = vec2(pCache->m_Char.m_HookX, pCache->m_Char.m_HookY);
 
-				if(NetworkClipped(SnappingClient, Pos) && NetworkClipped(SnappingClient, HookPos))
+				if(NetworkClipped(SnappingClient, Pos, HookPos))
 					continue;
 
 				if(!pCache->m_NeedSkip)
@@ -477,27 +477,38 @@ CPoseCharacter::~CPoseCharacter()
 {
 }
 
-int CPoseCharacter::NetworkClipped(int SnappingClient)
-{
-	return NetworkClipped(SnappingClient, vec2(m_Core.m_X, m_Core.m_Y));
-}
-
-int CPoseCharacter::NetworkClipped(int SnappingClient, vec2 CheckPos)
+int CPoseCharacter::NetworkClipped(int SnappingClient, vec2 From, vec2 To)
 {
 	if(SnappingClient == -1)
-		return 0;
+		return false;
 
-	// pose should be nearby only
+	vec2 ShowDistance;
+	ShowDistance = vec2(g_Config.m_SvPosesShowDistanceX, g_Config.m_SvPosesShowDistanceY);
 
-	float dx = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.x - CheckPos.x;
-	if(absolute(dx) > g_Config.m_SvPosesShowDistanceX)
-		return 1;
+	vec2 ViewPos = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos;
+	vec2 TL = vec2(ViewPos.x + ShowDistance.x, ViewPos.y + ShowDistance.y);
+	vec2 TR = vec2(ViewPos.x + ShowDistance.x, ViewPos.y - ShowDistance.y);
+	vec2 BL = vec2(ViewPos.x - ShowDistance.x, ViewPos.y + ShowDistance.y);
+	vec2 BR = vec2(ViewPos.x - ShowDistance.x, ViewPos.y - ShowDistance.y);
 
-	float dy = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.y - CheckPos.y;
-	if(absolute(dy) > g_Config.m_SvPosesShowDistanceY)
-		return 1;
+	// not clipped if endpoints already in view rect
+	if((absolute(ViewPos.x - From.x) <= ShowDistance.x && absolute(ViewPos.y - From.y) <= ShowDistance.y) ||
+		(absolute(ViewPos.x - To.x) <= ShowDistance.x && absolute(ViewPos.y - To.y) <= ShowDistance.y))
+		return false;
 
-	return 0;
+	auto q1 = From;
+	auto q2 = To;
+
+	auto SegmentIntersect = [q1, q2](vec2 p1, vec2 p2) -> bool {
+		return (((q1.x - p1.x) * (p2.y - p1.y) - (q1.y - p1.y) * (p2.x - p1.x)) * ((q2.x - p1.x) * (p2.y - p1.y) - (q2.y - p1.y) * (p2.x - p1.x)) < 0) &&
+		       (((p1.x - q1.x) * (q2.y - q1.y) - (p1.y - q1.y) * (q2.x - q1.x)) * ((p2.x - q1.x) * (q2.y - q1.y) - (p2.y - q1.y) * (q2.x - q1.x)) < 0);
+	};
+
+	// not clipped if line intersect with any edge of the view rect
+	if(SegmentIntersect(TL, TR) || SegmentIntersect(BL, BR) || SegmentIntersect(TL, BL) || SegmentIntersect(TR, BR))
+		return false;
+
+	return true;
 }
 
 void CPoseCharacter::WriteCharacter(CCharacter *pCharacter)
@@ -647,8 +658,16 @@ void CPoseCharacter::Snap(int SnappingClient)
 	if(g_Config.m_SvPosesHookLimit >= 0 && distance(Pos, HookPos) > g_Config.m_SvPosesHookLimit)
 		HookPos = Pos + normalize(HookPos - Pos) * g_Config.m_SvPosesHookLimit;
 
-	if(NetworkClipped(SnappingClient) && NetworkClipped(SnappingClient, HookPos))
-		return;
+	if(m_Core.m_HookState > HOOK_IDLE)
+	{
+		if(NetworkClipped(SnappingClient, Pos, HookPos))
+			return;
+	}
+	else
+	{
+		if(NetworkClipped(SnappingClient, Pos, Pos))
+			return;
+	}
 
 	int ID = m_ClientPoseMap[SnappingClient];
 	if(!IsCurrent(SnappingClient, ID, this))
