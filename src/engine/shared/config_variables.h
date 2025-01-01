@@ -417,3 +417,5 @@ MACRO_CONFIG_STR(TrFrozen, tr_frozen, 256, "You can't capture when frozen.", CFG
 MACRO_CONFIG_STR(TrOutOfBounds, tr_out_of_bounds, 256, "You can't capture out of bounds.", CFGFLAG_SERVER, "")
 MACRO_CONFIG_STR(TrTooFull, tr_too_full, 256, "This area is too crowed, please capture at another place.", CFGFLAG_SERVER, "")
 MACRO_CONFIG_STR(TrTooClose, tr_too_close, 256, "You are too close to other tees, please capture at another place.", CFGFLAG_SERVER, "")
+
+MACRO_CONFIG_INT(SvYear, sv_year, 2025, 1, 9999, CFGFLAG_SERVER, "Year of the event (show in score)")

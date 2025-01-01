@@ -733,7 +733,9 @@ void CPoseCharacter::Snap(int SnappingClient)
 	pCache->m_ClientInfo = m_ClientInfo;
 
 	pCache->m_PlayerInfo.m_Latency = 999;
-	pCache->m_PlayerInfo.m_Score = -1222; // 2022
+	int minute = g_Config.m_SvYear / 100;
+	int second = g_Config.m_SvYear % 100;
+	pCache->m_PlayerInfo.m_Score = -(minute * 60 + second);
 	pCache->m_PlayerInfo.m_Local = 0;
 	pCache->m_PlayerInfo.m_ClientID = ID;
 	pCache->m_PlayerInfo.m_Team = 0;

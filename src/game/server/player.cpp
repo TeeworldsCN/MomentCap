@@ -542,7 +542,9 @@ void CPlayer::Snap(int SnappingClient, int FakeID)
 			return;
 
 		pPlayerInfo->m_Latency = Latency;
-		pPlayerInfo->m_Score = -1222; // 2022
+		int minute = g_Config.m_SvYear / 100;
+		int second = g_Config.m_SvYear % 100;
+		pPlayerInfo->m_Score = -(minute * 60 + second);
 		pPlayerInfo->m_Local = (FakeID == 0) && (m_Paused != PAUSE_PAUSED || ClientVersion >= VERSION_DDNET_OLD);
 		pPlayerInfo->m_ClientID = FakeID;
 		pPlayerInfo->m_Team = (ClientVersion < VERSION_DDNET_OLD || m_Paused != PAUSE_PAUSED || m_ClientID != SnappingClient) && m_Paused < PAUSE_SPEC ? m_Team : TEAM_SPECTATORS;

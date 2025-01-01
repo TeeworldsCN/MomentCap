@@ -631,14 +631,12 @@ void CCharacter::FireWeapon()
 
 void CCharacter::HandleWeapons()
 {
-	// HACK: No weapon handling
+	//ninja
+	HandleNinja();
+	HandleJetpack();
 
-	// //ninja
-	// HandleNinja();
-	// HandleJetpack();
-
-	// if(m_PainSoundTimer > 0)
-	// 	m_PainSoundTimer--;
+	if(m_PainSoundTimer > 0)
+		m_PainSoundTimer--;
 
 	// // check reload timer
 	if(m_ReloadTimer)
@@ -649,18 +647,18 @@ void CCharacter::HandleWeapons()
 
 	// fire Weapon, if wanted
 	FireWeapon();
-	/*
+
 	// ammo regen
 	int AmmoRegenTime = g_pData->m_Weapons.m_aId[m_Core.m_ActiveWeapon].m_Ammoregentime;
 	if(AmmoRegenTime)
 	{
 		// If equipped and not active, regen ammo?
-		if (m_ReloadTimer <= 0)
+		if(m_ReloadTimer <= 0)
 		{
-			if (m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart < 0)
+			if(m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart < 0)
 				m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = Server()->Tick();
 
-			if ((Server()->Tick() - m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart) >= AmmoRegenTime * Server()->TickSpeed() / 1000)
+			if((Server()->Tick() - m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart) >= AmmoRegenTime * Server()->TickSpeed() / 1000)
 			{
 				// Add some ammo
 				m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo = minimum(m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo + 1, 10);
@@ -671,7 +669,7 @@ void CCharacter::HandleWeapons()
 		{
 			m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = -1;
 		}
-	}*/
+	}
 
 	return;
 }
@@ -1326,8 +1324,7 @@ void CCharacter::ManualSnap(int SnappingClient, int FakeID, int SwapID, bool Fix
 	if(m_Core.m_ActiveWeapon == WEAPON_NINJA)
 		pDDNetCharacter->m_Flags |= CHARACTERFLAG_WEAPON_NINJA;
 
-	pDDNetCharacter->m_FreezeEnd = m_DeepFreeze ? -1 : m_FreezeTime == 0 ? 0 :
-                                                                               Server()->Tick() + m_FreezeTime;
+	pDDNetCharacter->m_FreezeEnd = m_DeepFreeze ? -1 : m_FreezeTime == 0 ? 0 : Server()->Tick() + m_FreezeTime;
 	pDDNetCharacter->m_Jumps = m_Core.m_Jumps;
 	pDDNetCharacter->m_TeleCheckpoint = m_TeleCheckpoint;
 	pDDNetCharacter->m_StrongWeakID = m_StrongWeakID;
