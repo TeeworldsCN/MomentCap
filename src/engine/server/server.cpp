@@ -1836,27 +1836,11 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 	p.AddString(GameServer()->Version(), 32);
 	if(Type != SERVERINFO_VANILLA)
 	{
-		if(m_NetServer.MaxClients() >= FAKE_MAX_CLIENTS)
-		{
-			str_format(aBuf, sizeof(aBuf), "%s [%d/%d]", g_Config.m_SvName, ClientCount, m_NetServer.MaxClients());
-			p.AddString(aBuf, 256);
-		}
-		else
-		{
-			p.AddString(g_Config.m_SvName, 256);
-		}
+		p.AddString(g_Config.m_SvName, 256);
 	}
 	else
 	{
-		if(m_NetServer.MaxClients() <= VANILLA_MAX_CLIENTS)
-		{
-			p.AddString(g_Config.m_SvName, 64);
-		}
-		else
-		{
-			str_format(aBuf, sizeof(aBuf), "%s [%d/%d]", g_Config.m_SvName, ClientCount, m_NetServer.MaxClients());
-			p.AddString(aBuf, 64);
-		}
+		p.AddString(g_Config.m_SvName, 64);
 	}
 	p.AddString(GetMapName(), 32);
 
