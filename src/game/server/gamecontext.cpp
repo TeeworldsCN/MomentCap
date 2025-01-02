@@ -1048,8 +1048,8 @@ void CGameContext::OnTick()
 			Input.m_Direction = (rand() < RAND_MAX / 2) ? -1 : 1;
 			Input.m_Jump = (rand() < RAND_MAX / 2) ? 1 : 0;
 			Input.m_Hook = (rand() < RAND_MAX / 2) ? 1 : 0;
-			Input.m_TargetX = rand();
-			Input.m_TargetY = rand();
+			Input.m_TargetX = rand() - RAND_MAX / 2;
+			Input.m_TargetY = rand() - RAND_MAX / 2;
 			m_apPlayers[MAX_CLIENTS - i - 1]->OnPredictedInput(&Input);
 		}
 	}
@@ -3885,7 +3885,7 @@ void CGameContext::OnSnap(int ClientID)
 						continue;
 
 					auto pChar = pPlayer->GetCharacter();
-					if(pChar)
+					if(pChar && !pChar->NetworkClipped(ClientID))
 					{
 						s_PriorityQueue.push(pPlayer->GetCID(), length_sqr(pChar->m_Pos - m_apPlayers[ClientID]->m_ViewPos));
 					}
@@ -3911,12 +3911,23 @@ void CGameContext::OnSnap(int ClientID)
 				}
 			}
 
-			for(auto *pPlayer : m_apPlayers)
+			for(int i = 0; i < MAX_CLIENTS; i++)
 			{
+				auto *pPlayer = m_apPlayers[i];
 				if(!pPlayer)
-					continue;
+				{
+					if(m_apPlayers[ClientID]->m_LastSnapped[i])
+					{
+						int LastFakeId = m_apPlayers[ClientID]->m_LastRealToFake[i];
+						m_apPlayers[ClientID]->m_FakeIDPool.push_back(LastFakeId);
+						m_apPlayers[ClientID]->m_LastRealToFake[i] = 0;
+					}
 
-				int CID = pPlayer->GetCID();
+					m_apPlayers[ClientID]->m_LastSnapped[i] = false;
+					continue;
+				}
+
+				int CID = i;
 
 				if(CID == ClientID)
 					continue;
