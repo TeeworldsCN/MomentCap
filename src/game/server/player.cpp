@@ -244,7 +244,7 @@ static int PlayerFlags_SixToSeven(int Flags)
 void CPlayer::Tick()
 {
 #ifdef CONF_DEBUG
-	if(!g_Config.m_DbgDummies || m_ClientID < MAX_CLIENTS - g_Config.m_DbgDummies)
+	if(!g_Config.m_DbgDummies || m_ClientID < Server()->MaxClients() - g_Config.m_DbgDummies)
 #endif
 		// 	if(m_ScoreQueryResult != nullptr && m_ScoreQueryResult->m_Completed)
 		// 	{
@@ -419,7 +419,7 @@ void CPlayer::PostTick()
 void CPlayer::PostPostTick()
 {
 #ifdef CONF_DEBUG
-	if(!g_Config.m_DbgDummies || m_ClientID < MAX_CLIENTS - g_Config.m_DbgDummies)
+	if(!g_Config.m_DbgDummies || m_ClientID < Server()->MaxClients() - g_Config.m_DbgDummies)
 #endif
 		if(!Server()->ClientIngame(m_ClientID))
 			return;
@@ -502,7 +502,7 @@ void CPlayer::SnapGhost(int SnappingClient)
 void CPlayer::Snap(int SnappingClient, int FakeID)
 {
 #ifdef CONF_DEBUG
-	if(!g_Config.m_DbgDummies || m_ClientID < MAX_CLIENTS - g_Config.m_DbgDummies)
+	if(!g_Config.m_DbgDummies || m_ClientID < Server()->MaxClients() - g_Config.m_DbgDummies)
 #endif
 		if(!Server()->ClientIngame(m_ClientID))
 			return;

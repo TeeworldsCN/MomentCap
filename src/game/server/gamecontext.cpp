@@ -1050,7 +1050,7 @@ void CGameContext::OnTick()
 			Input.m_Hook = (rand() < RAND_MAX / 2) ? 1 : 0;
 			Input.m_TargetX = rand() - RAND_MAX / 2;
 			Input.m_TargetY = rand() - RAND_MAX / 2;
-			m_apPlayers[MAX_CLIENTS - i - 1]->OnPredictedInput(&Input);
+			m_apPlayers[Server()->MaxClients() - i - 1]->OnPredictedInput(&Input);
 		}
 	}
 #endif
@@ -1378,7 +1378,7 @@ void CGameContext::OnClientConnected(int ClientID)
 #ifdef CONF_DEBUG
 	if(g_Config.m_DbgDummies)
 	{
-		if(ClientID >= MAX_CLIENTS - g_Config.m_DbgDummies)
+		if(ClientID >= Server()->MaxClients() - g_Config.m_DbgDummies)
 			return;
 	}
 #endif
@@ -3585,7 +3585,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	{
 		for(int i = 0; i < g_Config.m_DbgDummies; i++)
 		{
-			OnClientConnected(MAX_CLIENTS - i - 1);
+			OnClientConnected(Server()->MaxClients() - i - 1);
 		}
 	}
 #endif

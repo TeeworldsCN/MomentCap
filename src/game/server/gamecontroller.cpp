@@ -460,7 +460,7 @@ void IGameController::Tick()
 #ifdef CONF_DEBUG
 			if(g_Config.m_DbgDummies)
 			{
-				if(i >= MAX_CLIENTS - g_Config.m_DbgDummies)
+				if(i >= Server()->MaxClients() - g_Config.m_DbgDummies)
 					break;
 			}
 #endif
