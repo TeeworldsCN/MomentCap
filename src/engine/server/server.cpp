@@ -1892,9 +1892,9 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 	}
 
 	if(PlayerCount >= MaxClients)
-		PlayerCount = MaxClients - 1;
+		PlayerCount = MaxClients - maximum(g_Config.m_SvSpectatorSlots, g_Config.m_SvReservedSlots) - 1;
 	if(ClientCount >= MaxClients)
-		ClientCount = MaxClients - 1;
+		ClientCount = MaxClients - g_Config.m_SvReservedSlots - 1;
 
 	if(PlayerCount > ClientCount)
 		PlayerCount = ClientCount;
