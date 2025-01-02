@@ -459,7 +459,7 @@ int CPoseCharacter::FindIDFor(int SnappingClient)
 
 bool CPoseCharacter::IsCurrent(int SnappingClient, int FakeID, void *pID)
 {
-	if(FakeID < 0)
+	if(FakeID <= 0)
 		return false;
 	if(FakeID >= FAKE_MAX_CLIENTS)
 		return false;
