@@ -3992,6 +3992,13 @@ bool CGameContext::IsClientReady(int ClientID)
 
 bool CGameContext::IsClientPlayer(int ClientID)
 {
+#ifdef CONF_DEBUG
+	if(g_Config.m_DbgDummies)
+	{
+		if (ClientID >= Server()->MaxClients() - g_Config.m_DbgDummies)
+			return false;
+	}
+#endif
 	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
 }
 

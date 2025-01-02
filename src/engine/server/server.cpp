@@ -1836,11 +1836,27 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 	p.AddString(GameServer()->Version(), 32);
 	if(Type != SERVERINFO_VANILLA)
 	{
-		p.AddString(g_Config.m_SvName, 256);
+		if(m_NetServer.MaxClients() >= FAKE_MAX_CLIENTS)
+		{
+			str_format(aBuf, sizeof(aBuf), "%s [%d/%d]", g_Config.m_SvName, ClientCount, m_NetServer.MaxClients());
+			p.AddString(aBuf, 256);
+		}
+		else
+		{
+			p.AddString(g_Config.m_SvName, 256);
+		}
 	}
 	else
 	{
-		p.AddString(g_Config.m_SvName, 64);
+		if(m_NetServer.MaxClients() <= VANILLA_MAX_CLIENTS)
+		{
+			p.AddString(g_Config.m_SvName, 64);
+		}
+		else
+		{
+			str_format(aBuf, sizeof(aBuf), "%s [%d/%d]", g_Config.m_SvName, ClientCount, m_NetServer.MaxClients());
+			p.AddString(aBuf, 64);
+		}
 	}
 	p.AddString(GetMapName(), 32);
 
@@ -1944,8 +1960,15 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 	// For legacy 64p, send 24 players per packet.
 	// For extended, send as much players as possible.
 
-	for(int i = 0; i < FAKE_MAX_CLIENTS; i++)
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
+		bool isDummy = false;
+#ifdef CONF_DEBUG
+		if(g_Config.m_DbgDummies)
+		{
+			isDummy = true;
+		}
+#endif
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
 		{
 			if(Remaining == 0)
@@ -1989,6 +2012,9 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 				}
 			}
 			PlayersStored++;
+
+			if(PlayersStored >= ClientCount)
+				break;
 		}
 	}
 
