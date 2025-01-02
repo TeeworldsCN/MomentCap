@@ -1076,7 +1076,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 }
 
 //TODO: Move the emote stuff to a function
-void CCharacter::SnapCharacter(int SnappingClient, int ID, int SwapID, bool FixHook)
+void CCharacter::SnapCharacter(int SnappingClient, int ID, int *RealToFake, bool FixHook)
 {
 	CCharacterCore *pCore;
 	int Tick, Emote = m_EmoteType, Weapon = m_Core.m_ActiveWeapon, AmmoCount = 0,
@@ -1190,15 +1190,11 @@ void CCharacter::SnapCharacter(int SnappingClient, int ID, int SwapID, bool FixH
 					pCharacter->m_HookedPlayer = -1;
 			}
 
-			if(SwapID >= 0)
+			if(RealToFake)
 			{
-				if(pCharacter->m_HookedPlayer == SwapID)
+				if(pCharacter->m_HookedPlayer >= 0)
 				{
-					pCharacter->m_HookedPlayer = 0;
-				}
-				else if(pCharacter->m_HookedPlayer == 0)
-				{
-					pCharacter->m_HookedPlayer = SwapID;
+					pCharacter->m_HookedPlayer = RealToFake[pCharacter->m_HookedPlayer];
 				}
 			}
 		}
@@ -1242,7 +1238,7 @@ void CCharacter::Snap(int SnappingClient)
 	// HACK: no auto snap;
 }
 
-void CCharacter::ManualSnap(int SnappingClient, int FakeID, int SwapID, bool FixHook)
+void CCharacter::ManualSnap(int SnappingClient, int FakeID, int *RealToFake, bool FixHook)
 {
 	int ID = m_pPlayer->GetCID();
 
@@ -1274,7 +1270,7 @@ void CCharacter::ManualSnap(int SnappingClient, int FakeID, int SwapID, bool Fix
 	if(m_Paused)
 		return;
 
-	SnapCharacter(SnappingClient, FakeID, SwapID, FixHook);
+	SnapCharacter(SnappingClient, FakeID, RealToFake, FixHook);
 
 	CNetObj_DDNetCharacter *pDDNetCharacter = static_cast<CNetObj_DDNetCharacter *>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, FakeID, sizeof(CNetObj_DDNetCharacter)));
 	if(!pDDNetCharacter)

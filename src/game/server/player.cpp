@@ -97,6 +97,11 @@ CPlayer::~CPlayer()
 
 void CPlayer::Reset()
 {
+	mem_zero(m_LastSnapped, sizeof(m_LastSnapped));
+	mem_zero(m_LastRealToFake, sizeof(m_LastRealToFake));
+	for(int i = 1; i < FAKE_MAX_CLIENTS; i++)
+		m_FakeIDPool.push_back(i);
+
 	m_ForcingViewPos = 0;
 	m_ForcedViewPos = vec2(0, 0);
 

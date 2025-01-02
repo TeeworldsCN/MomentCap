@@ -126,6 +126,10 @@ public:
 		int m_Max;
 	} m_Latency;
 
+	bool m_LastSnapped[MAX_CLIENTS];
+	int m_LastRealToFake[MAX_CLIENTS];
+	std::vector<int> m_FakeIDPool;
+
 private:
 	CCharacter *m_pCharacter;
 	int m_NumInputs;

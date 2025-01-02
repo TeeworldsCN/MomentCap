@@ -95,7 +95,6 @@ private:
 	CNetObj_CharacterCore m_Core;
 
 	void SnapCharacter(int SnappingClient, int ID);
-	void SnapPlayer(int SnappingClient, int ID);
 
 	void WriteCharacter(CCharacter *pCharacter);
 	void WritePlayer(CPlayer *pPlayer);

@@ -87,6 +87,12 @@ inline T length(const vector2_base<T> &a)
 }
 
 template<typename T>
+inline T length_sqr(const vector2_base<T> &a)
+{
+	return a.x * a.x + a.y * a.y;
+}
+
+template<typename T>
 inline T distance(const vector2_base<T> a, const vector2_base<T> &b)
 {
 	return length(a - b);

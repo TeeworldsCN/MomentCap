@@ -1045,7 +1045,11 @@ void CGameContext::OnTick()
 		for(int i = 0; i < g_Config.m_DbgDummies; i++)
 		{
 			CNetObj_PlayerInput Input = {0};
-			Input.m_Direction = (i & 1) ? -1 : 1;
+			Input.m_Direction = (rand() < RAND_MAX / 2) ? -1 : 1;
+			Input.m_Jump = (rand() < RAND_MAX / 2) ? 1 : 0;
+			Input.m_Hook = (rand() < RAND_MAX / 2) ? 1 : 0;
+			Input.m_TargetX = rand();
+			Input.m_TargetY = rand();
 			m_apPlayers[MAX_CLIENTS - i - 1]->OnPredictedInput(&Input);
 		}
 	}
@@ -3787,6 +3791,46 @@ void CGameContext::LoadMapSettings()
 	Console()->ExecuteFile(aBuf, IConsole::CLIENT_ID_NO_GAME);
 }
 
+struct PItem
+{
+	int m_ClientID;
+	float m_Priority;
+};
+
+class PriorityQueue
+{
+	std::vector<PItem> m_Queue;
+
+public:
+	void push(int value, float priority)
+	{
+		m_Queue.push_back(PItem{value, priority});
+		std::push_heap(m_Queue.begin(), m_Queue.end(), [this](PItem a, PItem b) {
+			return a.m_Priority > b.m_Priority;
+		});
+	}
+	int pop()
+	{
+		PItem value = m_Queue.front();
+		m_Queue.erase(m_Queue.begin());
+		std::pop_heap(m_Queue.begin(), m_Queue.end(), [this](PItem a, PItem b) {
+			return a.m_Priority > b.m_Priority;
+		});
+		return value.m_ClientID;
+	}
+	void clear()
+	{
+		m_Queue.clear();
+	}
+	bool empty()
+	{
+		return m_Queue.empty();
+	}
+};
+
+static PriorityQueue s_PriorityQueue;
+static int s_RealToFake[MAX_CLIENTS];
+
 void CGameContext::OnSnap(int ClientID)
 {
 	// add tuning to demo
@@ -3813,12 +3857,9 @@ void CGameContext::OnSnap(int ClientID)
 
 	// HACK: only send self as 0
 	m_apPlayers[ClientID]->Snap(ClientID, 0);
-	if(m_apPlayers[ClientID]->GetCharacter())
-		m_apPlayers[ClientID]->GetCharacter()->ManualSnap(ClientID, 0, ClientID, !SendReal);
 
-	// high capacity mode, don't send real
-	if(m_MaxClientID >= FAKE_MAX_CLIENTS)
-		SendReal = false;
+	s_PriorityQueue.clear();
+	mem_zero(s_RealToFake, sizeof(s_RealToFake));
 
 	if(SendReal == m_aLastSendReal[ClientID] && ReadyForFakeSnap)
 	{
@@ -3831,30 +3872,78 @@ void CGameContext::OnSnap(int ClientID)
 			m_apPlayers[ClientID]->m_LastPoseSnapTick = Server()->Tick();
 
 		m_apPlayers[ClientID]->m_PoseOnScreen = CPoseCharacter::SnapPoses(ClientID, SendReal, SnapNew);
-
-		if(m_NumPlayers < g_Config.m_SvThresholdNoMonster)
+		if(m_apPlayers[ClientID]->m_ShowOthers)
 		{
-			for(auto *pPlayer : m_apPlayers)
+			if(SendReal)
 			{
-				if(pPlayer)
+				for(auto *pPlayer : m_apPlayers)
 				{
-					if(SendReal)
+					if(!pPlayer)
+						continue;
+
+					if(pPlayer->GetCID() == ClientID)
+						continue;
+
+					auto pChar = pPlayer->GetCharacter();
+					if(pChar)
 					{
-						int PID = pPlayer->GetCID();
-						if(ClientID != pPlayer->GetCID())
-						{
-							pPlayer->Snap(ClientID, PID == 0 ? ClientID : PID);
-							auto pChar = pPlayer->GetCharacter();
-							if(pChar)
-								pChar->ManualSnap(ClientID, PID == 0 ? ClientID : PID, ClientID, !SendReal);
-						}
+						s_PriorityQueue.push(pPlayer->GetCID(), length_sqr(pChar->m_Pos - m_apPlayers[ClientID]->m_ViewPos));
+					}
+				}
+
+				s_RealToFake[ClientID] = 0;
+
+				while(!s_PriorityQueue.empty())
+				{
+					int CID = s_PriorityQueue.pop();
+					if(m_apPlayers[ClientID]->m_LastSnapped[CID] && m_apPlayers[ClientID]->m_LastRealToFake[CID])
+					{
+						s_RealToFake[CID] = m_apPlayers[ClientID]->m_LastRealToFake[CID];
 					}
 					else
 					{
-						// show others as entities
-						if(m_apPlayers[ClientID]->m_ShowOthers)
-							pPlayer->SnapGhost(ClientID);
+						if(m_apPlayers[ClientID]->m_FakeIDPool.empty())
+							break;
+
+						s_RealToFake[CID] = m_apPlayers[ClientID]->m_FakeIDPool.back();
+						m_apPlayers[ClientID]->m_FakeIDPool.pop_back();
 					}
+				}
+			}
+
+			for(auto *pPlayer : m_apPlayers)
+			{
+				if(!pPlayer)
+					continue;
+
+				int CID = pPlayer->GetCID();
+
+				if(CID == ClientID)
+					continue;
+
+				int FakeId = s_RealToFake[CID];
+				if(FakeId != 0)
+				{
+					auto pChar = pPlayer->GetCharacter();
+					if(pChar && m_apPlayers[ClientID]->m_LastSnapped[CID])
+					{
+						pPlayer->Snap(ClientID, FakeId);
+						pChar->ManualSnap(ClientID, FakeId, s_RealToFake, true);
+					}
+					m_apPlayers[ClientID]->m_LastSnapped[CID] = true;
+					m_apPlayers[ClientID]->m_LastRealToFake[CID] = FakeId;
+				}
+				else
+				{
+					if(m_apPlayers[ClientID]->m_LastSnapped[CID])
+					{
+						int LastFakeId = m_apPlayers[ClientID]->m_LastRealToFake[CID];
+						m_apPlayers[ClientID]->m_FakeIDPool.push_back(LastFakeId);
+						m_apPlayers[ClientID]->m_LastRealToFake[CID] = 0;
+					}
+
+					m_apPlayers[ClientID]->m_LastSnapped[CID] = false;
+					pPlayer->SnapGhost(ClientID);
 				}
 			}
 		}
@@ -3864,6 +3953,9 @@ void CGameContext::OnSnap(int ClientID)
 		m_apPlayers[ClientID]->m_SendReal = SendReal;
 		((CGameControllerDDRace *)m_pController)->m_Teams.SendTeamsState(ClientID);
 	}
+
+	if(m_apPlayers[ClientID]->GetCharacter())
+		m_apPlayers[ClientID]->GetCharacter()->ManualSnap(ClientID, 0, s_RealToFake, !SendReal);
 
 	m_aLastSendReal[ClientID] = SendReal;
 
