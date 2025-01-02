@@ -1798,7 +1798,7 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 
 	// One chance to improve the protocol!
 	CPacker p;
-	char aBuf[128];
+	char aBuf[256];
 
 	// count the players
 	int PlayerCount = 0, ClientCount = 0;
@@ -1836,7 +1836,7 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 	p.AddString(GameServer()->Version(), 32);
 	if(Type != SERVERINFO_VANILLA)
 	{
-		if(ClientCount >= FAKE_MAX_CLIENTS)
+		if(m_NetServer.MaxClients() >= FAKE_MAX_CLIENTS)
 		{
 			str_format(aBuf, sizeof(aBuf), "%s [%d/%d]", g_Config.m_SvName, ClientCount, m_NetServer.MaxClients());
 			p.AddString(aBuf, 256);
