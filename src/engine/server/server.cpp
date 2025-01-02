@@ -1969,7 +1969,7 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 			isDummy = true;
 		}
 #endif
-		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
+		if(m_aClients[i].m_State != CClient::STATE_EMPTY || isDummy)
 		{
 			if(Remaining == 0)
 			{
