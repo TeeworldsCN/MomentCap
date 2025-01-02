@@ -976,6 +976,11 @@ bool CPlayer::AfkTimer(int NewTargetX, int NewTargetY)
 	if(g_Config.m_SvMaxAfkTime == 0)
 		return false; // 0 = disabled
 
+	if (m_LastPlaytime == 0) {
+		UpdatePlaytime();
+		return false;
+	}
+
 	if(NewTargetX != m_LastTarget_x || NewTargetY != m_LastTarget_y)
 	{
 		UpdatePlaytime();
