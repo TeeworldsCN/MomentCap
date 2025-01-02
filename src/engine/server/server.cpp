@@ -1806,14 +1806,14 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
 		{
-			if(GameServer()->IsClientPlayer(i))
+			if(GameServer()->IsClientPlayer(i) && i < FAKE_MAX_CLIENTS)
 				PlayerCount++;
 
 			ClientCount++;
 		}
 	}
 
-#if CONF_DEBUG
+#ifdef CONF_DEBUG
 	if(g_Config.m_DbgDummies)
 	{
 		for(int i = 0; i < g_Config.m_DbgDummies; i++)
