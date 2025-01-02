@@ -87,7 +87,7 @@ private:
 
 	static int HashCoordinate(int X, int Y, int OffsetX = 0, int OffsetY = 0);
 
-	uint8_t m_ClientPoseMap[MAX_CLIENTS];
+	int m_ClientPoseMap[MAX_CLIENTS];
 
 	bool m_Init;
 	int m_Weapon;

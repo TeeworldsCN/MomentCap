@@ -320,7 +320,7 @@ const CPoseCharacter *CPoseCharacter::FindPoseByName(const char *pName)
 
 int CPoseCharacter::HashCoordinate(int X, int Y, int OffsetX, int OffsetY)
 {
-	return ((short)(X / 1000) + OffsetX) + ((short)(Y / 800) + OffsetY) << 16;
+	return ((short)((X / 1000) + OffsetX)) + ((short)((Y / 800) + OffsetY)) << 16;
 }
 
 bool CPoseCharacter::Pose(CPlayer *pPlayer)
@@ -459,18 +459,20 @@ int CPoseCharacter::FindIDFor(int SnappingClient)
 
 bool CPoseCharacter::IsCurrent(int SnappingClient, int FakeID, void *pID)
 {
-	if(FakeID == 0)
+	if(FakeID < 0)
+		return false;
+	if(FakeID >= FAKE_MAX_CLIENTS)
 		return false;
 	if(s_SnapCache[SnappingClient][FakeID].m_pID == pID)
 		return true;
-
 	return false;
 }
 
 CPoseCharacter::CPoseCharacter()
 {
 	m_Init = false;
-	mem_zero(m_ClientPoseMap, sizeof(m_ClientPoseMap));
+	for (int i = 0; i < MAX_CLIENTS; i++)
+		m_ClientPoseMap[i] = -1;
 }
 
 CPoseCharacter::~CPoseCharacter()
