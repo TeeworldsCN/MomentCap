@@ -1293,8 +1293,7 @@ void CServer::UpdateClientRconCommands()
 
 	if(m_aClients[ClientID].m_State != CClient::STATE_EMPTY && m_aClients[ClientID].m_Authed)
 	{
-		int ConsoleAccessLevel = m_aClients[ClientID].m_Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : m_aClients[ClientID].m_Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD :
-                                                                                                                                                                      IConsole::ACCESS_LEVEL_HELPER;
+		int ConsoleAccessLevel = m_aClients[ClientID].m_Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : m_aClients[ClientID].m_Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD : IConsole::ACCESS_LEVEL_HELPER;
 		for(int i = 0; i < MAX_RCONCMD_SEND && m_aClients[ClientID].m_pRconCmdToSend; ++i)
 		{
 			SendRconCmdAdd(m_aClients[ClientID].m_pRconCmdToSend, ClientID);
@@ -1582,9 +1581,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 					m_RconClientID = ClientID;
 					m_RconAuthLevel = m_aClients[ClientID].m_Authed;
-					Console()->SetAccessLevel(m_aClients[ClientID].m_Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : m_aClients[ClientID].m_Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD :
-																	 m_aClients[ClientID].m_Authed == AUTHED_HELPER      ? IConsole::ACCESS_LEVEL_HELPER :
-                                                                                                                                                                                               IConsole::ACCESS_LEVEL_USER);
+					Console()->SetAccessLevel(m_aClients[ClientID].m_Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : m_aClients[ClientID].m_Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD : m_aClients[ClientID].m_Authed == AUTHED_HELPER ? IConsole::ACCESS_LEVEL_HELPER : IConsole::ACCESS_LEVEL_USER);
 					Console()->ExecuteLineFlag(pCmd, CFGFLAG_SERVER, ClientID);
 					Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
 					m_RconClientID = IServer::RCON_CID_SERV;
@@ -1805,8 +1802,7 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 
 	// count the players
 	int PlayerCount = 0, ClientCount = 0;
-	// leave one open
-	for(int i = 0; i < FAKE_MAX_CLIENTS - 1; i++)
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
 		{
@@ -1816,6 +1812,16 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 			ClientCount++;
 		}
 	}
+
+#if CONF_DEBUG
+	if(g_Config.m_DbgDummies)
+	{
+		for(int i = 0; i < g_Config.m_DbgDummies; i++)
+		{
+			ClientCount++;
+		}
+	}
+#endif
 
 	p.Reset();
 
@@ -1830,7 +1836,15 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 	p.AddString(GameServer()->Version(), 32);
 	if(Type != SERVERINFO_VANILLA)
 	{
-		p.AddString(g_Config.m_SvName, 256);
+		if(ClientCount >= FAKE_MAX_CLIENTS)
+		{
+			str_format(aBuf, sizeof(aBuf), "%s [%d/%d]", g_Config.m_SvName, ClientCount, m_NetServer.MaxClients());
+			p.AddString(aBuf, 256);
+		}
+		else
+		{
+			p.AddString(g_Config.m_SvName, 256);
+		}
 	}
 	else
 	{
@@ -1876,6 +1890,14 @@ void CServer::CacheServerInfo(CCache *pCache, int Type, bool SendClients)
 		if(PlayerCount > ClientCount)
 			PlayerCount = ClientCount;
 	}
+
+	if(PlayerCount >= MaxClients)
+		PlayerCount = MaxClients - 1;
+	if(ClientCount >= MaxClients)
+		ClientCount = MaxClients - 1;
+
+	if(PlayerCount > ClientCount)
+		PlayerCount = ClientCount;
 
 	ADD_INT(p, PlayerCount); // num players
 	ADD_INT(p, maximum(MaxClients - maximum(g_Config.m_SvSpectatorSlots, g_Config.m_SvReservedSlots), PlayerCount)); // max players
@@ -2725,9 +2747,9 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 			if(g_Config.m_SvDnsbl)
 			{
 				const char *pDnsblStr = pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_WHITELISTED ? "white" :
-							pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_BLACKLISTED ? "black" :
-							pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_PENDING     ? "pending" :
-                                                                                                                                "n/a";
+																pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_BLACKLISTED ? "black" :
+																									pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_PENDING ? "pending" :
+																																	    "n/a";
 
 				str_format(aDnsblStr, sizeof(aDnsblStr), " dnsbl=%s", pDnsblStr);
 			}
@@ -2736,10 +2758,10 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 			aAuthStr[0] = '\0';
 			if(pThis->m_aClients[i].m_AuthKey >= 0)
 			{
-				const char *pAuthStr = pThis->m_aClients[i].m_Authed == AUTHED_ADMIN  ? "(Admin)" :
-						       pThis->m_aClients[i].m_Authed == AUTHED_MOD    ? "(Mod)" :
-						       pThis->m_aClients[i].m_Authed == AUTHED_HELPER ? "(Helper)" :
-                                                                                                        "";
+				const char *pAuthStr = pThis->m_aClients[i].m_Authed == AUTHED_ADMIN ? "(Admin)" :
+												       pThis->m_aClients[i].m_Authed == AUTHED_MOD ? "(Mod)" :
+																		     pThis->m_aClients[i].m_Authed == AUTHED_HELPER ? "(Helper)" :
+																								      "";
 
 				str_format(aAuthStr, sizeof(aAuthStr), " key=%s %s", pThis->m_AuthManager.KeyIdent(pThis->m_aClients[i].m_AuthKey), pAuthStr);
 			}
